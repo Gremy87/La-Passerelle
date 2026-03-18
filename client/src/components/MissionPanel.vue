@@ -84,15 +84,24 @@
       <div class="border-t border-space-border p-3 flex-shrink-0 space-y-2">
 
         <!-- HANGAR : bouton lancer -->
-        <button
-          v-if="mission.statut === 'hangar'"
-          @click="handleLancer"
-          :disabled="launching"
-          class="w-full py-2.5 rounded-xl bg-space-blue text-white text-sm font-mono font-semibold hover:bg-space-blue/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-        >
-          <span>🚀</span>
-          <span>{{ launching ? 'Lancement...' : 'Lancer maintenant' }}</span>
-        </button>
+        <div v-if="mission.statut === 'hangar'" class="space-y-2">
+          <label class="flex items-center gap-2 text-[11px] font-mono text-space-muted cursor-pointer select-none">
+            <input
+              type="checkbox"
+              v-model="skipPermissions"
+              class="w-3.5 h-3.5 rounded accent-space-danger cursor-pointer"
+            />
+            <span>⚠️ Lancer sans demande de permissions (dangereux)</span>
+          </label>
+          <button
+            @click="handleLancer"
+            :disabled="launching"
+            class="w-full py-2.5 rounded-xl bg-space-blue text-white text-sm font-mono font-semibold hover:bg-space-blue/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            <span>🚀</span>
+            <span>{{ launching ? 'Lancement...' : 'Lancer maintenant' }}</span>
+          </button>
+        </div>
 
         <!-- INTERVENTION : champ réponse -->
         <div v-else-if="mission.statut === 'intervention'" class="space-y-2">
@@ -155,9 +164,10 @@ const chatStore = useChatStore()
 const logAnchor = ref(null)
 const replyText = ref('')
 const copyLabel = ref('Copier')
-const launching  = ref(false)
-const sending    = ref(false)
-const abandoning = ref(false)
+const launching      = ref(false)
+const sending        = ref(false)
+const abandoning     = ref(false)
+const skipPermissions = ref(false)
 
 // ─── Logs réactifs via le store ───────────────────────────────────────────────
 const logs = computed(() => {
@@ -240,8 +250,10 @@ async function handleLancer() {
   if (!props.mission || launching.value) return
   launching.value = true
   try {
-    await store.lancerMission(props.mission.id)
+    const options = skipPermissions.value ? { skip_permissions: true } : {}
+    await store.lancerMission(props.mission.id, options)
     chatStore.addAssistantMessage(`🚀 Mission "${props.mission.titre}" lancée !`)
+    skipPermissions.value = false
     emit('close')
   } catch (err) {
     console.error('❌ Lancer mission:', err.message)

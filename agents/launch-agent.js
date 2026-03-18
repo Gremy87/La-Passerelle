@@ -110,6 +110,7 @@ async function main() {
   const repoPath    = args['repo-path'] || null;
   const title       = args['title']       || `Mission #${missionId}`;
   const description = args['description'] || 'Aucune description fournie';
+  const skipPerms   = args['skip-permissions'] === 'true';
 
   if (!missionId) {
     console.error('❌ --mission-id est requis');
@@ -160,12 +161,14 @@ async function main() {
     }
 
     await new Promise((resolve, reject) => {
-      const args = [
+      const claudeArgs = [
         '--print',                    // Mode non-interactif : print output et quitte
         '--output-format', 'stream-json', // Stream JSON pour parser les events
         '--verbose',
-        description
       ];
+      if (skipPerms) claudeArgs.push('--dangerously-skip-permissions');
+      claudeArgs.push(description);
+      const args = claudeArgs;
 
       const proc = spawn(claudeBin, args, {
         cwd,

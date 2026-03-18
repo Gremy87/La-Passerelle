@@ -223,6 +223,7 @@ router.post('/:id/lancer', (req, res) => {
     events.agentStatus(updatedAgent);
 
     // Préparer les arguments de launch-agent.js
+    const { skip_permissions } = req.body || {};
     const launchScript = path.join(__dirname, '../../agents/launch-agent.js');
     const args = [
       launchScript,
@@ -232,6 +233,9 @@ router.post('/:id/lancer', (req, res) => {
     ];
     if (mission.repo_path) {
       args.push(`--repo-path=${mission.repo_path}`);
+    }
+    if (skip_permissions) {
+      args.push('--skip-permissions=true');
     }
 
     // Lancer l'agent en child_process détaché

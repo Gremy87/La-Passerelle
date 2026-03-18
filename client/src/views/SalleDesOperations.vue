@@ -104,7 +104,7 @@
             @select="handleSelect"
           />
           <div v-if="missionStandBy.length === 0" class="text-center text-space-dim text-xs font-mono py-3">
-            Hangar vide
+            Aucune mission en attente
           </div>
         </div>
       </div>

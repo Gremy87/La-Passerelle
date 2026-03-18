@@ -1,27 +1,33 @@
 /**
  * db.js — Configuration et initialisation de la base de données SQLite
- * Utilise better-sqlite3 pour des opérations synchrones performantes
+ * Utilise sql.js (SQLite pur JS, compatible Mac ARM64 / Node v24)
+ * API compatible avec better-sqlite3 : .prepare().get() / .all() / .run()
  */
 
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
 
 // Chemin vers le fichier SQLite (racine du serveur)
 const DB_PATH = path.join(__dirname, 'passerelle.db');
 
-// Création/ouverture de la base de données
-const db = new Database(DB_PATH);
-
-// Activation des foreign keys et du WAL mode (performances)
-db.pragma('foreign_keys = ON');
-db.pragma('journal_mode = WAL');
+// Instance sql.js interne (initialisée par db.init())
+let _sqlDb = null;
 
 /**
- * Initialise les tables si elles n'existent pas encore
+ * Persiste la base mémoire sur disque
  */
-function initDb() {
-  db.exec(`
+function saveDb() {
+  if (!_sqlDb) return;
+  const data = _sqlDb.export();
+  fs.writeFileSync(DB_PATH, Buffer.from(data));
+}
+
+/**
+ * Crée les tables et triggers si absents
+ */
+function initTables() {
+  _sqlDb.exec(`
     -- Table des missions (tâches assignées aux agents)
     CREATE TABLE IF NOT EXISTS missions (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,16 +99,118 @@ function initDb() {
       END;
   `);
 
+  saveDb();
   console.log('✅ Base de données initialisée');
 }
 
-// Initialisation automatique au chargement du module
-initDb();
+/**
+ * Wrapper compatible better-sqlite3
+ * Expose : .prepare(sql) → { get, all, run }
+ *           .exec(sql)
+ *           .pragma(expr)
+ *           .close()
+ *           .init()   ← async, à appeler une fois au démarrage
+ */
+const db = {
+  /**
+   * Prépare un statement et retourne un objet avec get/all/run
+   * (synchrone côté appelant, comme better-sqlite3)
+   */
+  prepare(sql) {
+    return {
+      /** Retourne la première ligne ou undefined */
+      get(...args) {
+        const params = args.flat();
+        const stmt = _sqlDb.prepare(sql);
+        if (params.length) stmt.bind(params);
+        const row = stmt.step() ? stmt.getAsObject() : undefined;
+        stmt.free();
+        return row;
+      },
 
-// Si lancé directement (npm run db:init), afficher un message
+      /** Retourne toutes les lignes */
+      all(...args) {
+        const params = args.flat();
+        const stmt = _sqlDb.prepare(sql);
+        if (params.length) stmt.bind(params);
+        const rows = [];
+        while (stmt.step()) rows.push(stmt.getAsObject());
+        stmt.free();
+        return rows;
+      },
+
+      /**
+       * Exécute une écriture (INSERT / UPDATE / DELETE)
+       * Retourne { lastInsertRowid, changes }
+       */
+      run(...args) {
+        const params = args.flat();
+        _sqlDb.run(sql, params.length ? params : undefined);
+        const lastId = _sqlDb.exec('SELECT last_insert_rowid()')[0]?.values[0][0] ?? null;
+        const changes = _sqlDb.getRowsModified();
+        saveDb();
+        return { lastInsertRowid: lastId, changes };
+      }
+    };
+  },
+
+  /**
+   * Exécute du SQL multi-instructions (sans paramètres)
+   * Compatible avec better-sqlite3's db.exec()
+   */
+  exec(sql) {
+    _sqlDb.exec(sql);
+    saveDb();
+  },
+
+  /**
+   * Exécute un PRAGMA (better-sqlite3 accepte juste l'expression, ex : 'foreign_keys = ON')
+   */
+  pragma(expr) {
+    _sqlDb.run(`PRAGMA ${expr}`);
+  },
+
+  /** Ferme proprement la base */
+  close() {
+    saveDb();
+    if (_sqlDb) {
+      _sqlDb.close();
+      _sqlDb = null;
+    }
+  },
+
+  /**
+   * Initialise sql.js et ouvre/crée la base de données.
+   * Doit être appelé (et attendu) AVANT tout accès à la DB.
+   */
+  async init() {
+    const SQL = await initSqlJs();
+
+    if (fs.existsSync(DB_PATH)) {
+      const fileBuffer = fs.readFileSync(DB_PATH);
+      _sqlDb = new SQL.Database(fileBuffer);
+    } else {
+      _sqlDb = new SQL.Database();
+    }
+
+    // Foreign keys (WAL non supporté par sql.js en mémoire, inutile ici)
+    _sqlDb.run('PRAGMA foreign_keys = ON');
+
+    initTables();
+    return db;
+  }
+};
+
+// Si lancé directement (npm run db:init)
 if (require.main === module) {
-  console.log('🗄️  Passerelle DB prête :', DB_PATH);
-  db.close();
+  db.init().then(() => {
+    console.log('🗄️  Passerelle DB prête :', DB_PATH);
+    db.close();
+    process.exit(0);
+  }).catch(err => {
+    console.error('❌ Erreur init DB :', err);
+    process.exit(1);
+  });
 }
 
 module.exports = db;

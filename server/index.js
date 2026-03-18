@@ -11,7 +11,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 
-// Initialiser la base de données en premier
+// DB et routes (db.init() est async — voir bootstrap() plus bas)
 const db = require('./db');
 
 // Routes
@@ -102,17 +102,27 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3717;
 
-// Initialiser le WebSocket sur le même serveur HTTP
-initWebSocket(server);
+async function bootstrap() {
+  // Initialiser la base de données (sql.js est async au démarrage)
+  await db.init();
 
-server.listen(PORT, () => {
-  console.log('');
-  console.log('╔══════════════════════════════════════╗');
-  console.log('║     🚀 LA PASSERELLE — En ligne      ║');
-  console.log(`║     Port : ${PORT}                     ║`);
-  console.log('║     Prêt à recevoir l\'Escadron ⚡    ║');
-  console.log('╚══════════════════════════════════════╝');
-  console.log('');
+  // Initialiser le WebSocket sur le même serveur HTTP
+  initWebSocket(server);
+
+  server.listen(PORT, () => {
+    console.log('');
+    console.log('╔══════════════════════════════════════╗');
+    console.log('║     🚀 LA PASSERELLE — En ligne      ║');
+    console.log(`║     Port : ${PORT}                     ║`);
+    console.log('║     Prêt à recevoir l\'Escadron ⚡    ║');
+    console.log('╚══════════════════════════════════════╝');
+    console.log('');
+  });
+}
+
+bootstrap().catch(err => {
+  console.error('❌ Erreur au démarrage :', err);
+  process.exit(1);
 });
 
 // Arrêt propre

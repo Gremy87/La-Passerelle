@@ -148,7 +148,8 @@ const STATUT_LABELS = {
 
 function formatDate(d) {
   if (!d) return ''
-  return new Date(d).toLocaleString('fr-FR', {
+  const iso = d.includes('T') || d.includes('Z') ? d : d.replace(' ', 'T') + 'Z'
+  return new Date(iso).toLocaleString('fr-FR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   })

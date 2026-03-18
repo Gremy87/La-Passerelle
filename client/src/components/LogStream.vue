@@ -53,7 +53,8 @@ const TYPE_ICONS = {
 
 function formatTime(d) {
   if (!d) return '--:--:--'
-  return new Date(d).toLocaleTimeString('fr-FR', {
+  const iso = d.includes('T') || d.includes('Z') ? d : d.replace(' ', 'T') + 'Z'
+  return new Date(iso).toLocaleTimeString('fr-FR', {
     hour: '2-digit', minute: '2-digit', second: '2-digit'
   })
 }

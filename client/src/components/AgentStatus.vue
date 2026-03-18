@@ -81,7 +81,9 @@ const STATUT_CLASSES = {
 // Calculer le % d'activité basé sur le last_seen (dernière activité < 5 min = 100%)
 const activitePct = computed(() => {
   if (!props.agent.last_seen) return 0
-  const diff = Date.now() - new Date(props.agent.last_seen).getTime()
+  const ls = props.agent.last_seen
+  const isoLs = ls.includes('T') || ls.includes('Z') ? ls : ls.replace(' ', 'T') + 'Z'
+  const diff = Date.now() - new Date(isoLs).getTime()
   const mins = diff / 60000
   if (mins < 1)  return 100
   if (mins < 5)  return Math.round(100 - (mins * 15))
@@ -96,7 +98,8 @@ const activiteLabel = computed(() => {
 
 function formatRelative(d) {
   if (!d) return ''
-  const diff = Date.now() - new Date(d).getTime()
+  const iso = d.includes('T') || d.includes('Z') ? d : d.replace(' ', 'T') + 'Z'
+  const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1)    return 'à l\'instant'
   if (mins < 60)   return `il y a ${mins}m`

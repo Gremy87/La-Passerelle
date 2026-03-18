@@ -88,15 +88,15 @@ router.post('/', async (req, res) => {
     let rawContent
     try {
       const response = await client.messages.create({
-        model: 'claude-opus-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
         system: DISPATCHER_SYSTEM_PROMPT,
         messages: history,
       })
       rawContent = response.content[0].text.trim()
     } catch (apiErr) {
-      // Fallback haiku si opus pas dispo
-      if (apiErr.status === 404 || apiErr.message?.includes('model')) {
+      // Fallback haiku 3 si haiku 4.5 pas dispo
+      if (apiErr.status === 400 || apiErr.status === 404) {
         const response = await client.messages.create({
           model: 'claude-3-haiku-20240307',
           max_tokens: 500,

@@ -91,7 +91,7 @@ export const usePasserelleStore = defineStore('passerelle', () => {
 
   async function createMission(payload) {
     const { data } = await api.post('/missions', payload)
-    missions.value.unshift(data)
+    // Pas de push local — le WebSocket (mission:update) s'en charge
     return data
   }
 
@@ -139,7 +139,7 @@ export const usePasserelleStore = defineStore('passerelle', () => {
 
   async function createAgent(payload) {
     const { data } = await api.post('/agents', payload)
-    agents.value.push(data)
+    // Pas de push local — le WebSocket (agent:status) s'en charge
     return data
   }
 
@@ -168,7 +168,7 @@ export const usePasserelleStore = defineStore('passerelle', () => {
 
   async function createHangarItem(payload) {
     const { data } = await api.post('/hangar', payload)
-    hangar.value.unshift(data)
+    // Pas de push local — le WebSocket (hangar:update) s'en charge
     return data
   }
 

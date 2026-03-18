@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('./db');
 const { events } = require('./websocket');
+const { notifyIntervention } = require('./telegram');
 
 /**
  * Trouve une mission active par agent_id ou crée un log orphelin
@@ -213,6 +214,9 @@ router.post('/notification', (req, res) => {
       events.interventionNew(updatedMission);
 
       logMessage(mission_id, agent_id, 'agent', message || 'Intervention requise', 'info');
+
+      // Notification Telegram
+      notifyIntervention(updatedMission).catch(err => console.error('⚠️  Telegram notify error:', err.message));
     }
 
     res.json({ ok: true });
@@ -266,6 +270,8 @@ router.post('/agent-log', (req, res) => {
       const updatedMission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
       events.missionUpdate(updatedMission);
       console.log(`🚨 Intervention automatique détectée — mission #${mission_id}`);
+      // Notification Telegram
+      notifyIntervention(updatedMission).catch(err => console.error('⚠️  Telegram notify error:', err.message));
     }
 
     res.json({ ok: true });

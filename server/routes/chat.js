@@ -88,7 +88,7 @@ router.post('/', async (req, res) => {
     let rawContent
     try {
       const response = await client.messages.create({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 500,
         system: DISPATCHER_SYSTEM_PROMPT,
         messages: history,
@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
       // Fallback haiku si opus pas dispo
       if (apiErr.status === 404 || apiErr.message?.includes('model')) {
         const response = await client.messages.create({
-          model: 'claude-3-5-haiku-20241022',
+          model: 'claude-3-haiku-20240307',
           max_tokens: 500,
           system: DISPATCHER_SYSTEM_PROMPT,
           messages: history,

@@ -111,6 +111,7 @@ async function main() {
   const title       = args['title']       || `Mission #${missionId}`;
   const description = args['description'] || 'Aucune description fournie';
   const skipPerms   = args['skip-permissions'] === 'true';
+  const sessionId   = args['session-id'] || null; // Pour --resume
 
   if (!missionId) {
     console.error('❌ --mission-id est requis');
@@ -166,7 +167,8 @@ async function main() {
         '--output-format', 'stream-json', // Stream JSON pour parser les events
         '--verbose',
       ];
-      if (skipPerms) claudeArgs.push('--dangerously-skip-permissions');
+      if (skipPerms)  claudeArgs.push('--dangerously-skip-permissions');
+      if (sessionId)  claudeArgs.push('--resume', sessionId);
       claudeArgs.push(description);
       const args = claudeArgs;
 
@@ -177,6 +179,7 @@ async function main() {
       });
 
       let buffer = '';
+      let capturedSessionId = null; // Session ID Claude pour --resume
 
       proc.stdout.on('data', async (chunk) => {
         buffer += chunk.toString();
@@ -188,6 +191,13 @@ async function main() {
           try {
             const event = JSON.parse(line);
             const type = event.type;
+
+            // Capturer le session_id dès qu'il apparaît
+            if (event.session_id && !capturedSessionId) {
+              capturedSessionId = event.session_id;
+              await post('/hooks/session-id', { mission_id: missionId, session_id: capturedSessionId });
+              console.log(`🔑 Session ID capturé : ${capturedSessionId}`);
+            }
 
             if (type === 'assistant') {
               const content = event.message?.content || [];
@@ -213,12 +223,59 @@ async function main() {
         if (txt) await log(missionId, `⚠️ ${txt}`, 'erreur');
       });
 
+      // ── Polling messages entrants ──────────────────────────────────────────
+      // Récupère les messages 'amiral' depuis la DB pour les injecter dans stdin
+      // Note: avec --print le stdin est 'ignore', on log uniquement pour traçabilité
+      let lastMessageId = 0;
+      const pollMessages = setInterval(async () => {
+        try {
+          const result = await new Promise((res) => {
+            const opts = {
+              hostname: 'localhost',
+              port:     3717,
+              path:     `/api/missions/${missionId}/messages?since=${lastMessageId}`,
+              method:   'GET',
+            };
+            const req = http.request(opts, (response) => {
+              let data = '';
+              response.on('data', (chunk) => { data += chunk; });
+              response.on('end', () => {
+                try { res(JSON.parse(data)); } catch { res([]); }
+              });
+            });
+            req.on('error', () => res([]));
+            req.end();
+          });
+
+          const amiralMessages = Array.isArray(result)
+            ? result.filter(m => m.role === 'amiral')
+            : [];
+
+          for (const msg of amiralMessages) {
+            if (msg.id > lastMessageId) lastMessageId = msg.id;
+            // Tenter d'injecter dans stdin si le process est interactif
+            // Avec --print, stdin est 'ignore' donc on log pour traçabilité
+            if (proc.stdin && proc.stdin.writable) {
+              proc.stdin.write(msg.contenu + '\n');
+              console.log(`💬 Message injecté dans stdin : ${msg.contenu.slice(0, 80)}`);
+            } else {
+              console.log(`💬 Message amiral (stdin non disponible): ${msg.contenu.slice(0, 80)}`);
+              // TODO: quand claude CLI supportera l'injection interactive, utiliser stdin
+            }
+          }
+        } catch (err) {
+          // Polling silencieux
+        }
+      }, 3000); // Poll toutes les 3 secondes
+
       proc.on('close', (code) => {
+        clearInterval(pollMessages);
         if (code === 0 || code === null) resolve();
         else reject(new Error(`Claude CLI exited with code ${code}`));
       });
 
       proc.on('error', (err) => {
+        clearInterval(pollMessages);
         reject(new Error(`Impossible de lancer claude CLI: ${err.message}`));
       });
     });

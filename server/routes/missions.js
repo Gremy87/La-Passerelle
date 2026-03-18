@@ -276,6 +276,27 @@ router.post('/:id/lancer', (req, res) => {
 });
 
 /**
+ * GET /api/missions/:id/messages
+ * Récupère les messages d'une mission (avec filtre ?since=<id>)
+ */
+router.get('/:id/messages', (req, res) => {
+  try {
+    const { since = 0 } = req.query;
+    const messages = db.prepare(`
+      SELECT msg.*, a.nom as agent_nom
+      FROM messages msg
+      LEFT JOIN agents a ON msg.agent_id = a.id
+      WHERE msg.mission_id = ? AND msg.id > ?
+      ORDER BY msg.created_at ASC
+    `).all(req.params.id, parseInt(since));
+    res.json(messages);
+  } catch (err) {
+    console.error('❌ GET /missions/:id/messages:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * POST /api/missions/:id/message
  * Envoyer un message à l'agent en cours (réponse de l'Amiral)
  */
@@ -287,21 +308,23 @@ router.post('/:id/message', (req, res) => {
       return res.status(404).json({ error: 'Mission introuvable' });
     }
     
-    const { contenu } = req.body;
+    const { contenu, content } = req.body;
+    const messageContent = contenu || content;
     
-    if (!contenu) {
+    if (!messageContent) {
       return res.status(400).json({ error: 'contenu est requis' });
     }
     
     const result = db.prepare(`
       INSERT INTO messages (mission_id, agent_id, role, contenu, type)
       VALUES (?, NULL, 'amiral', ?, 'texte')
-    `).run(req.params.id, contenu);
+    `).run(req.params.id, messageContent);
     
     const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(result.lastInsertRowid);
     
-    // Diffuser en temps réel
+    // Diffuser en temps réel (logs + event spécifique pour l'agent)
     events.agentLog(req.params.id, message);
+    events.agentMessage(req.params.id, messageContent);
     
     // Si la mission était en intervention, la remettre en cours
     if (mission.statut === 'intervention') {
@@ -318,6 +341,81 @@ router.post('/:id/message', (req, res) => {
     res.status(201).json(message);
   } catch (err) {
     console.error('❌ POST /missions/:id/message:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/missions/:id/reprendre
+ * Reprend une mission via --resume (session_id)
+ */
+router.post('/:id/reprendre', (req, res) => {
+  const { spawn } = require('child_process');
+  const path = require('path');
+
+  try {
+    const mission = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
+
+    if (!mission) {
+      return res.status(404).json({ error: 'Mission introuvable' });
+    }
+
+    if (!mission.session_id) {
+      return res.status(400).json({ error: 'Pas de session_id pour cette mission — impossible de reprendre' });
+    }
+
+    if (!['terminee', 'abandonnee'].includes(mission.statut)) {
+      return res.status(400).json({ error: `Impossible de reprendre une mission en statut "${mission.statut}"` });
+    }
+
+    // Chercher un agent libre
+    const agent = db.prepare('SELECT * FROM agents WHERE statut = \'libre\' LIMIT 1').get();
+    if (!agent) {
+      return res.status(409).json({ error: 'Aucun agent disponible' });
+    }
+
+    // Assigner + passer en_cours
+    db.prepare('UPDATE agents SET statut = \'en_mission\', mission_id = ? WHERE id = ?').run(mission.id, agent.id);
+    db.prepare('UPDATE missions SET statut = \'en_cours\', agent_id = ?, completed_at = NULL WHERE id = ?').run(agent.id, mission.id);
+
+    const updatedMission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission.id);
+    const updatedAgent   = db.prepare('SELECT * FROM agents WHERE id = ?').get(agent.id);
+    events.missionUpdate(updatedMission);
+    events.agentStatus(updatedAgent);
+
+    // Lancer avec --session-id
+    const launchScript = path.join(__dirname, '../../agents/launch-agent.js');
+    const { skip_permissions } = req.body || {};
+    const args = [
+      launchScript,
+      `--mission-id=${mission.id}`,
+      `--title=${mission.titre}`,
+      `--description=${mission.description}`,
+      `--session-id=${mission.session_id}`,
+    ];
+    if (mission.repo_path) args.push(`--repo-path=${mission.repo_path}`);
+    if (skip_permissions)  args.push('--skip-permissions=true');
+
+    const serverNodeModules = path.join(__dirname, '../node_modules');
+    const nodePath = process.env.NODE_PATH
+      ? `${serverNodeModules}:${process.env.NODE_PATH}`
+      : serverNodeModules;
+
+    const child = spawn(process.execPath, args, {
+      detached: true,
+      stdio:    'ignore',
+      env:      { ...process.env, NODE_PATH: nodePath },
+    });
+
+    const pid = child.pid;
+    child.unref();
+    db.prepare('UPDATE agents SET pid = ? WHERE id = ?').run(pid, agent.id);
+
+    console.log(`↩️  Reprise session ${mission.session_id} — agent #${agent.id} (PID ${pid}) — mission #${mission.id}`);
+    res.json({ success: true, agent_id: agent.id, pid, mission_id: mission.id });
+
+  } catch (err) {
+    console.error('❌ POST /missions/:id/reprendre:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

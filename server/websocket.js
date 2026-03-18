@@ -87,6 +87,8 @@ const events = {
   missionUpdate: (mission) => broadcast('mission:update', mission),
   // Nouveau log d'agent
   agentLog: (missionId, message) => broadcast('agent:log', { missionId, message }),
+  // Message entrant de l'Amiral vers l'agent (pour polling)
+  agentMessage: (missionId, content) => broadcast('agent:message', { mission_id: missionId, content }),
   // Changement de statut d'un agent
   agentStatus: (agent) => broadcast('agent:status', agent),
   // Nouvelle demande d'intervention

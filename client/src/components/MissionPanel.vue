@@ -126,6 +126,22 @@
           </form>
         </div>
 
+        <!-- TERMINÉE / ABANDONNÉE avec session_id : bouton Reprendre -->
+        <div v-if="['terminee', 'abandonnee'].includes(mission.statut) && mission.session_id" class="space-y-2">
+          <div class="text-[10px] font-mono text-space-dim flex items-center gap-1.5">
+            <span>🔑</span>
+            <span class="truncate">Session : {{ mission.session_id }}</span>
+          </div>
+          <button
+            @click="handleReprendre"
+            :disabled="resuming"
+            class="w-full py-2.5 rounded-xl bg-space-blue/80 text-white text-sm font-mono font-semibold hover:bg-space-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            <span>↩️</span>
+            <span>{{ resuming ? 'Reprise...' : 'Reprendre la session' }}</span>
+          </button>
+        </div>
+
         <!-- Bouton Abandonner (missions actives) -->
         <button
           v-if="['en_cours', 'intervention', 'refinement'].includes(mission.statut)"
@@ -167,6 +183,7 @@ const copyLabel = ref('Copier')
 const launching      = ref(false)
 const sending        = ref(false)
 const abandoning     = ref(false)
+const resuming       = ref(false)
 const skipPermissions = ref(false)
 
 // ─── Logs réactifs via le store ───────────────────────────────────────────────
@@ -272,6 +289,20 @@ async function handleReply() {
     console.error('❌ Reply to agent:', err.message)
   } finally {
     sending.value = false
+  }
+}
+
+async function handleReprendre() {
+  if (!props.mission || resuming.value) return
+  resuming.value = true
+  try {
+    await store.reprendreMission(props.mission.id)
+    chatStore.addAssistantMessage(`↩️ Session reprise pour "${props.mission.titre}" !`)
+    emit('close')
+  } catch (err) {
+    console.error('❌ Reprendre session:', err.message)
+  } finally {
+    resuming.value = false
   }
 }
 

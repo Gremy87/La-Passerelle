@@ -322,6 +322,27 @@ router.post('/agent-error', (req, res) => {
 });
 
 /**
+ * POST /hooks/session-id
+ * L'agent informe le serveur du session_id Claude pour permettre --resume
+ */
+router.post('/session-id', (req, res) => {
+  const { mission_id, session_id } = req.body;
+  console.log(`🔑 Hook session-id — mission: ${mission_id}, session: ${session_id}`);
+
+  try {
+    if (mission_id && session_id) {
+      db.prepare('UPDATE missions SET session_id = ? WHERE id = ?').run(session_id, mission_id);
+      const updatedMission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
+      events.missionUpdate(updatedMission);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('❌ Hook session-id error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * POST /hooks/worktree-created
  * L'agent informe le serveur du chemin du worktree créé
  */

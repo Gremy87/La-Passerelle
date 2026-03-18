@@ -39,6 +39,7 @@ function initTables() {
                           CHECK(type IN ('execution','refinement','todo_personnel')),
       repo_path   TEXT,
       worktree_path TEXT,
+      session_id  TEXT,
       agent_id    INTEGER REFERENCES agents(id) ON DELETE SET NULL,
       created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
       updated_at  TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -98,6 +99,12 @@ function initTables() {
         UPDATE hangar SET updated_at = datetime('now') WHERE id = NEW.id;
       END;
   `);
+
+  // Migration: ajouter session_id si absent (pour bases existantes)
+  try {
+    _sqlDb.exec('ALTER TABLE missions ADD COLUMN session_id TEXT');
+    console.log('🔄 Migration: colonne session_id ajoutée');
+  } catch (_) { /* déjà présente */ }
 
   saveDb();
   console.log('✅ Base de données initialisée');

@@ -126,6 +126,14 @@ export const usePasserelleStore = defineStore('passerelle', () => {
     return data
   }
 
+  async function reprendreMission(missionId, options = {}) {
+    const { data } = await api.post(`/missions/${missionId}/reprendre`, options)
+    if (data.success) {
+      await Promise.all([fetchMissions(), fetchAgents()])
+    }
+    return data
+  }
+
   // ─── Actions Agents ───────────────────────────────────────────────────────
 
   async function fetchAgents() {
@@ -307,7 +315,7 @@ export const usePasserelleStore = defineStore('passerelle', () => {
     // Logs
     missionLogs, addMissionLog,
     // Actions missions
-    fetchMissions, getMission, createMission, updateMission, deleteMission, sendMessage, lancerMission, abandonnerMission,
+    fetchMissions, getMission, createMission, updateMission, deleteMission, sendMessage, lancerMission, abandonnerMission, reprendreMission,
     // Actions agents
     fetchAgents, createAgent, updateAgent, deleteAgent,
     // Actions hangar

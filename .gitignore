@@ -1,2 +1,32 @@
-.env
+# Dépendances
 node_modules/
+server/node_modules/
+client/node_modules/
+
+# Base de données SQLite (locale)
+server/passerelle.db
+server/passerelle.db-wal
+server/passerelle.db-shm
+
+# Variables d'environnement
+server/.env
+.env
+
+# Build client
+client/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

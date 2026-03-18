@@ -1,0 +1,20 @@
+{
+  "name": "la-passerelle",
+  "version": "1.0.0",
+  "description": "Dashboard de supervision d'agents Claude Code",
+  "scripts": {
+    "start":      "node server/index.js",
+    "dev:server": "cd server && node --watch index.js",
+    "dev:client": "cd client && npm run dev",
+    "dev": "npm run dev:server & npm run dev:client",
+    "build":      "cd client && npm run build",
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "db:init":    "cd server && node db.js init"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Gremy87/La-Passerelle.git"
+  },
+  "author": "Max ⚡ (assistant de Jérémy)",
+  "license": "MIT"
+}

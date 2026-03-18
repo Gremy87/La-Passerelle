@@ -141,99 +141,85 @@ async function main() {
 
   await log(missionId, `📁 Répertoire de travail : ${cwd}`, 'info');
 
-  // ── Import du SDK (ESM) ────────────────────────────────────────────────────
-  // Le SDK est installé dans server/node_modules — on résout le chemin absolu
-  let query;
-  try {
-    const sdkCandidates = [
-      // Chemin relatif depuis agents/ vers server/node_modules
-      path.join(__dirname, '../server/node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs'),
-      // Via NODE_PATH si défini
-      '@anthropic-ai/claude-agent-sdk',
-    ];
-
-    let sdkPath = null;
-    for (const candidate of sdkCandidates) {
-      if (candidate.startsWith('/') && fs.existsSync(candidate)) {
-        sdkPath = candidate;
-        break;
-      }
-    }
-
-    let sdk;
-    if (sdkPath) {
-      // Import par chemin absolu (évite les problèmes NODE_PATH avec ESM)
-      sdk = await import(`file://${sdkPath}`);
-    } else {
-      sdk = await import('@anthropic-ai/claude-agent-sdk');
-    }
-    query = sdk.query;
-  } catch (err) {
-    console.error('❌ Impossible de charger @anthropic-ai/claude-agent-sdk :', err.message);
-    await log(missionId, `❌ Erreur SDK : ${err.message}`, 'erreur');
-    await post('/hooks/agent-error', { mission_id: missionId, error: err.message });
-    process.exit(1);
-  }
-
-  // ── Lancement de l'agent ───────────────────────────────────────────────────
+  // ── Lancement via CLI claude (utilise l'abonnement Pro local) ──────────────
   await log(missionId, `🤖 Agent démarré — tâche : ${title}`, 'info');
 
+  const { spawn } = require('child_process');
+
   try {
-    const q = query({
-      prompt: description,
-      options: {
-        cwd,
-        allowedTools: ['Read', 'Edit', 'Write', 'Bash', 'Glob', 'Grep'],
-        tools: ['Read', 'Edit', 'Write', 'Bash', 'Glob', 'Grep'],
-      },
-    });
-
-    for await (const message of q) {
-      // Filtrer les messages utiles
-      if (!message) continue;
-
-      const type = message.type || 'unknown';
-
-      if (type === 'assistant') {
-        // Message texte de l'assistant
-        const content = message.message?.content;
-        if (Array.isArray(content)) {
-          for (const block of content) {
-            if (block.type === 'text' && block.text) {
-              await log(missionId, block.text, 'texte');
-            } else if (block.type === 'tool_use') {
-              await log(
-                missionId,
-                `🔧 ${block.name}${block.input ? ': ' + JSON.stringify(block.input).slice(0, 200) : ''}`,
-                'tool_use'
-              );
-            }
-          }
-        }
-      } else if (type === 'tool_result') {
-        // Résultat d'un outil
-        const result = message.output;
-        if (result) {
-          const preview = typeof result === 'string'
-            ? result.slice(0, 300)
-            : JSON.stringify(result).slice(0, 300);
-          await log(missionId, `✅ ${preview}`, 'tool_result');
-        }
-      } else if (type === 'result') {
-        // Message final de résultat
-        if (message.result) {
-          await log(missionId, `🎯 ${message.result}`, 'info');
-        }
-      } else if (type === 'system') {
-        // Message système
-        if (message.subtype !== 'init') {
-          await log(missionId, `[système] ${JSON.stringify(message).slice(0, 200)}`, 'info');
-        }
-      }
-      // Ignorer les types non pertinents (user, etc.)
+    // Chercher le binary claude (Claude Code CLI)
+    let claudeBin = 'claude';
+    const possiblePaths = [
+      '/usr/local/bin/claude',
+      '/opt/homebrew/bin/claude',
+      `${process.env.HOME}/.local/bin/claude`,
+      `${process.env.HOME}/.npm-global/bin/claude`,
+    ];
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) { claudeBin = p; break; }
     }
 
-    // ── Fin normale ──────────────────────────────────────────────────────────
+    await new Promise((resolve, reject) => {
+      const args = [
+        '--print',                    // Mode non-interactif : print output et quitte
+        '--output-format', 'stream-json', // Stream JSON pour parser les events
+        '--verbose',
+        description
+      ];
+
+      const proc = spawn(claudeBin, args, {
+        cwd,
+        env: { ...process.env, FORCE_COLOR: '0' },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      let buffer = '';
+
+      proc.stdout.on('data', async (chunk) => {
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // garder la ligne incomplète
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event = JSON.parse(line);
+            const type = event.type;
+
+            if (type === 'assistant') {
+              const content = event.message?.content || [];
+              for (const block of content) {
+                if (block.type === 'text' && block.text) {
+                  await log(missionId, block.text, 'texte');
+                } else if (block.type === 'tool_use') {
+                  await log(missionId, `🔧 ${block.name}: ${JSON.stringify(block.input || {}).slice(0, 200)}`, 'tool_use');
+                }
+              }
+            } else if (type === 'result') {
+              if (event.result) await log(missionId, `🎯 ${event.result}`, 'info');
+            }
+          } catch {
+            // Ligne non-JSON (logs texte bruts) — on log quand même
+            if (line.trim()) await log(missionId, line.trim(), 'texte');
+          }
+        }
+      });
+
+      proc.stderr.on('data', async (chunk) => {
+        const txt = chunk.toString().trim();
+        if (txt) await log(missionId, `⚠️ ${txt}`, 'erreur');
+      });
+
+      proc.on('close', (code) => {
+        if (code === 0 || code === null) resolve();
+        else reject(new Error(`Claude CLI exited with code ${code}`));
+      });
+
+      proc.on('error', (err) => {
+        reject(new Error(`Impossible de lancer claude CLI: ${err.message}`));
+      });
+    });
+
     console.log(`✅ Mission #${missionId} terminée`);
     await log(missionId, `✅ Mission accomplie — ${title}`, 'info');
     await post('/hooks/task-completed', { mission_id: missionId });
@@ -243,7 +229,7 @@ async function main() {
     await log(missionId, `❌ Erreur agent : ${err.message}`, 'erreur');
     await post('/hooks/agent-error', { mission_id: missionId, error: err.message });
   } finally {
-    // Nettoyage worktree optionnel (commenté — l'Amiral peut vouloir inspecter)
+    // Nettoyage worktree optionnel
     // if (repoPath) removeWorktree(repoPath, missionId);
   }
 }

@@ -88,7 +88,7 @@ router.post('/', async (req, res) => {
     let rawContent
     try {
       const response = await client.messages.create({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-5',
         max_tokens: 500,
         system: DISPATCHER_SYSTEM_PROMPT,
         messages: history,

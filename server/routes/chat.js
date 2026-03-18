@@ -9,14 +9,14 @@ const express = require('express')
 const router = express.Router()
 const db = require('../db')
 
-// Lazy-init Anthropic client pour ne pas crasher si la clé est absente
-let anthropicClient = null
-function getAnthropicClient() {
-  if (!anthropicClient && process.env.ANTHROPIC_API_KEY) {
-    const Anthropic = require('@anthropic-ai/sdk')
-    anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+// Lazy-init OpenAI client
+let openaiClient = null
+function getOpenAIClient() {
+  if (!openaiClient && process.env.OPENAI_API_KEY) {
+    const OpenAI = require('openai')
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   }
-  return anthropicClient
+  return openaiClient
 }
 
 const DISPATCHER_SYSTEM_PROMPT = `Tu es le dispatcher de "La Passerelle", un système de supervision d'agents IA.
@@ -74,40 +74,29 @@ router.post('/', async (req, res) => {
     }
 
     const text = message.trim()
-    const client = getAnthropicClient()
+    const client = getOpenAIClient()
 
     // ── Fallback simulé si pas de clé API ──────────────────────────────────
     if (!client) {
       return simulatedDispatcher(res, text)
     }
 
-    // ── Appel Claude API ───────────────────────────────────────────────────
+    // ── Appel OpenAI API ────────────────────────────────────────────────────
     const history = getHistory(sessionId)
     history.push({ role: 'user', content: text })
 
     let rawContent
-    try {
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
-        system: DISPATCHER_SYSTEM_PROMPT,
-        messages: history,
-      })
-      rawContent = response.content[0].text.trim()
-    } catch (apiErr) {
-      // Fallback haiku 3 si haiku 4.5 pas dispo
-      if (apiErr.status === 400 || apiErr.status === 404) {
-        const response = await client.messages.create({
-          model: 'claude-3-haiku-20240307',
-          max_tokens: 500,
-          system: DISPATCHER_SYSTEM_PROMPT,
-          messages: history,
-        })
-        rawContent = response.content[0].text.trim()
-      } else {
-        throw apiErr
-      }
-    }
+    const messages = [
+      { role: 'system', content: DISPATCHER_SYSTEM_PROMPT },
+      ...history,
+    ]
+
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 500,
+      messages,
+    })
+    rawContent = response.choices[0].message.content.trim()
 
     // Ajouter la réponse de l'assistant à l'historique
     history.push({ role: 'assistant', content: rawContent })
@@ -174,7 +163,7 @@ router.post('/', async (req, res) => {
   } catch (err) {
     console.error('❌ Chat route error:', err.message)
     if (err.status === 401 || err.status === 403) {
-      return res.status(500).json({ error: '⚠️ Clé API Anthropic invalide — configure ANTHROPIC_API_KEY dans .env' })
+      return res.status(500).json({ error: '⚠️ Clé API OpenAI invalide — configure OPENAI_API_KEY dans .env' })
     }
     res.status(500).json({ error: 'Erreur interne du dispatcher' })
   }
@@ -197,7 +186,7 @@ router.delete('/mission/:id', (req, res) => {
 function simulatedDispatcher(res, text) {
   if (text.length <= 20) {
     return res.json({
-      response: `⚠️ Dispatcher simulé (ANTHROPIC_API_KEY manquant)\n\nPeux-tu donner plus de détails sur la mission ?`,
+      response: `⚠️ Dispatcher simulé (OPENAI_API_KEY manquant)\n\nPeux-tu donner plus de détails sur la mission ?`,
       actions: null,
       missionId: null,
     })
@@ -210,7 +199,7 @@ function simulatedDispatcher(res, text) {
   `).run(titre, text)
 
   return res.json({
-    response: `⚠️ Mode simulé (ANTHROPIC_API_KEY manquant)\n\n📋 ${titre}\n\nComment procéder ?`,
+    response: `⚠️ Mode simulé (OPENAI_API_KEY manquant)\n\n📋 ${titre}\n\nComment procéder ?`,
     missionId: result.lastInsertRowid,
     missionTitle: titre,
     actions: [

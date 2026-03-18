@@ -264,8 +264,9 @@ export const usePasserelleStore = defineStore('passerelle', () => {
 
       case 'agent:log': {
         // Stocker dans logsMap ET diffuser via event custom pour rétrocompat
-        if (data && data.mission_id) {
-          addMissionLog(data.mission_id, { ...data, timestamp: Date.now() })
+        const mid = data?.mission_id || data?.missionId
+        if (data && mid) {
+          addMissionLog(mid, { ...data, ...data.message, timestamp: Date.now() })
         }
         window.dispatchEvent(new CustomEvent('passerelle:log', { detail: data }))
         break

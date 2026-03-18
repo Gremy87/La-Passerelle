@@ -9,7 +9,7 @@
       <div class="px-4 py-2.5 border-b border-space-border flex items-center justify-between flex-shrink-0">
         <div class="flex items-center gap-2">
           <span class="text-space-blue">💬</span>
-          <span class="text-sm font-mono font-semibold text-space-text tracking-wide">PASSERELLE</span>
+          <span class="text-sm font-mono font-semibold text-space-text tracking-wide">CENTRE DE COMMANDEMENT</span>
         </div>
         <div class="flex items-center gap-3 text-xs font-mono text-space-muted">
           <span v-if="store.connected" class="flex items-center gap-1">
@@ -148,7 +148,7 @@
           class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-space-border text-xs font-mono text-space-muted hover:text-space-text hover:border-space-blue/40 transition-colors"
         >
           <span>📁</span>
-          <span>Starchive</span>
+          <span>Starchives</span>
           <span class="ml-auto text-space-dim">{{ missionArchivees.length }}</span>
         </router-link>
       </div>

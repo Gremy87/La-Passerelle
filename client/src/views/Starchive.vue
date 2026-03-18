@@ -1,5 +1,5 @@
 <template>
-  <!-- Starchive — Toutes les missions terminées ou abandonnées, searchable -->
+  <!-- Starchives — Toutes les missions terminées ou abandonnées, searchable -->
   <div class="h-[calc(100vh-48px)] flex flex-col">
 
     <!-- En-tête -->
@@ -23,7 +23,7 @@
         <input
           v-model="query"
           type="text"
-          placeholder="Rechercher dans la Starchive..."
+          placeholder="Rechercher dans les Starchives..."
           class="w-full bg-space-panel border border-space-border rounded-lg pl-8 pr-4 py-2 text-sm font-mono text-space-text placeholder-space-dim focus:outline-none focus:border-space-blue/50 transition-colors"
         />
         <button v-if="query" @click="query = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-space-muted hover:text-space-text text-xs">✕</button>
@@ -37,7 +37,7 @@
       <div v-if="filteredMissions.length === 0" class="flex flex-col items-center justify-center h-full text-space-muted font-mono text-sm gap-2">
         <span class="text-3xl">📭</span>
         <span v-if="query">Aucune mission pour « {{ query }} »</span>
-        <span v-else>La Starchive est vide — aucune mission terminée</span>
+        <span v-else>Les Starchives est vide — aucune mission terminée</span>
       </div>
 
       <!-- Liste -->

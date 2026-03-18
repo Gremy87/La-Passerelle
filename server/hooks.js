@@ -252,6 +252,22 @@ router.post('/agent-log', (req, res) => {
     // Broadcast WebSocket
     events.agentLog(mission_id, message);
 
+    // Détection automatique d'intervention
+    const interventionKeywords = [
+      'permission', 'autoriser', 'j\'ai besoin', 'peux-tu', 'bloqu',
+      'accès refus', 'unable to', 'cannot write', 'denied'
+    ];
+    const mission_statut = mission?.statut;
+    const isIntervention = interventionKeywords.some(kw =>
+      content.toLowerCase().includes(kw.toLowerCase())
+    );
+    if (isIntervention && mission_statut === 'en_cours') {
+      db.prepare('UPDATE missions SET statut = ? WHERE id = ?').run('intervention', mission_id);
+      const updatedMission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
+      events.missionUpdate(updatedMission);
+      console.log(`🚨 Intervention automatique détectée — mission #${mission_id}`);
+    }
+
     res.json({ ok: true });
   } catch (err) {
     console.error('❌ Hook agent-log error:', err.message);

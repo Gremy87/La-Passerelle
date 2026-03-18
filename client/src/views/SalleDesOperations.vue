@@ -144,8 +144,8 @@
         </div>
       </div>
 
-      <!-- Footer : bouton Starchive -->
-      <div class="border-t border-space-border flex-shrink-0 p-3">
+      <!-- Footer : bouton Starchive + version -->
+      <div class="border-t border-space-border flex-shrink-0 p-3 space-y-2">
         <router-link
           to="/starchive"
           class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-space-border text-xs font-mono text-space-muted hover:text-space-text hover:border-space-blue/40 transition-colors"
@@ -154,6 +154,7 @@
           <span>Starchives</span>
           <span class="ml-auto text-space-dim">{{ missionArchivees.length }}</span>
         </router-link>
+        <div class="text-center text-[10px] font-mono text-space-dim opacity-50">v0.7</div>
       </div>
 
     </div>
@@ -182,6 +183,7 @@ const textarea = ref(null)
 const selectedMission = ref(null)
 
 function handleSelect(mission) {
+  console.log('[Passerelle] Mission sélectionnée:', mission)
   selectedMission.value = mission
 }
 

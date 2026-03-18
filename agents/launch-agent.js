@@ -118,8 +118,10 @@ async function main() {
 
   console.log(`🚀 Lancement agent — Mission #${missionId} : ${title}`);
 
-  // ── Worktree ────────────────────────────────────────────────────────────────
-  let cwd = `/tmp/passerelle/mission-${missionId}`;
+  // ── Répertoire de travail ───────────────────────────────────────────────────
+  // Par défaut : home de l'utilisateur (hérite du CLAUDE.md et config MCP)
+  const userHome = process.env.HOME || require('os').homedir();
+  let cwd = userHome;
 
   if (repoPath && fs.existsSync(repoPath)) {
     try {
@@ -133,14 +135,11 @@ async function main() {
         worktree_path: worktreePath,
       });
     } catch (err) {
-      await log(missionId, `⚠️  Impossible de créer le worktree : ${err.message} — lancement dans /tmp`, 'erreur');
-      fs.mkdirSync(cwd, { recursive: true });
+      await log(missionId, `⚠️  Impossible de créer le worktree : ${err.message} — lancement dans home`, 'erreur');
     }
-  } else {
-    // Pas de repo — dossier temp
-    fs.mkdirSync(cwd, { recursive: true });
-    await log(missionId, `📁 Dossier de travail : ${cwd}`, 'info');
   }
+
+  await log(missionId, `📁 Répertoire de travail : ${cwd}`, 'info');
 
   // ── Import du SDK (ESM) ────────────────────────────────────────────────────
   // Le SDK est installé dans server/node_modules — on résout le chemin absolu

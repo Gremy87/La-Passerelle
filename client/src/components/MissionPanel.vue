@@ -108,6 +108,17 @@
           </form>
         </div>
 
+        <!-- Bouton Abandonner (missions actives) -->
+        <button
+          v-if="['en_cours', 'intervention', 'refinement'].includes(mission.statut)"
+          @click="handleAbandonner"
+          :disabled="abandoning"
+          class="w-full py-2 rounded-xl border border-space-danger/30 text-space-danger text-xs font-mono hover:bg-space-danger/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        >
+          <span>🛑</span>
+          <span>{{ abandoning ? 'Abandon...' : 'Abandonner la mission' }}</span>
+        </button>
+
         <!-- Footer info -->
         <div class="flex items-center justify-between text-[10px] font-mono text-space-dim">
           <span>Créée {{ formatDate(mission.created_at) }}</span>
@@ -134,8 +145,9 @@ const chatStore = useChatStore()
 
 const logAnchor = ref(null)
 const replyText = ref('')
-const launching = ref(false)
-const sending   = ref(false)
+const launching  = ref(false)
+const sending    = ref(false)
+const abandoning = ref(false)
 
 // ─── Logs réactifs via le store ───────────────────────────────────────────────
 const logs = computed(() => {
@@ -221,6 +233,20 @@ async function handleReply() {
     console.error('❌ Reply to agent:', err.message)
   } finally {
     sending.value = false
+  }
+}
+
+async function handleAbandonner() {
+  if (!props.mission || abandoning.value) return
+  if (!confirm(`Abandonner la mission "${props.mission.titre}" ?`)) return
+  abandoning.value = true
+  try {
+    await store.abandonnerMission(props.mission.id)
+    emit('close')
+  } catch (err) {
+    console.error('❌ Abandonner mission:', err.message)
+  } finally {
+    abandoning.value = false
   }
 }
 </script>

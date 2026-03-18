@@ -114,10 +114,15 @@ export const usePasserelleStore = defineStore('passerelle', () => {
 
   async function lancerMission(missionId) {
     const { data } = await api.post(`/missions/${missionId}/lancer`)
-    // Mettre à jour la mission et l'agent dans le store
     if (data.success) {
       await Promise.all([fetchMissions(), fetchAgents()])
     }
+    return data
+  }
+
+  async function abandonnerMission(missionId) {
+    const { data } = await api.patch(`/missions/${missionId}`, { statut: 'abandonnee' })
+    await Promise.all([fetchMissions(), fetchAgents()])
     return data
   }
 
@@ -301,7 +306,7 @@ export const usePasserelleStore = defineStore('passerelle', () => {
     // Logs
     missionLogs, addMissionLog,
     // Actions missions
-    fetchMissions, getMission, createMission, updateMission, deleteMission, sendMessage, lancerMission,
+    fetchMissions, getMission, createMission, updateMission, deleteMission, sendMessage, lancerMission, abandonnerMission,
     // Actions agents
     fetchAgents, createAgent, updateAgent, deleteAgent,
     // Actions hangar

@@ -169,7 +169,7 @@ async function main() {
 
       const proc = spawn(claudeBin, args, {
         cwd,
-        env: { ...process.env, FORCE_COLOR: '0' },
+        env: { ...process.env, FORCE_COLOR: '0', ANTHROPIC_API_KEY: '' },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
 

@@ -201,20 +201,9 @@ function autoResize(e) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px'
 }
 
-// Gestion des boutons d'action dans les messages
+// Gestion des boutons d'action dans les messages (délégué au store)
 async function handleAction(action, msg) {
-  if (action.id === 'launch' && msg.missionId) {
-    try {
-      await store.lancerMission(msg.missionId)
-      chatStore.addAssistantMessage(`🚀 Mission lancée ! L'agent prend en charge : *${msg.missionTitle || 'nouvelle mission'}*`)
-    } catch (e) {
-      chatStore.addAssistantMessage('❌ Erreur au lancement de la mission.')
-    }
-  } else if (action.id === 'stanby' && msg.missionId) {
-    chatStore.addAssistantMessage('📥 Mission mise en stand-by dans le hangar. Tu peux la lancer quand tu veux.')
-  } else if (action.id === 'cancel') {
-    chatStore.addAssistantMessage('D\'accord, annulé. Dis-moi quand tu es prêt.')
-  }
+  await chatStore.handleAction(action, msg)
 }
 
 // Lancement rapide depuis le panneau

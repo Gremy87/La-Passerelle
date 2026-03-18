@@ -2,7 +2,7 @@
   <!-- MissionCard — Version compacte pour le panneau de supervision -->
 
   <!-- EN COURS -->
-  <div v-if="mode === 'en_cours'" class="mission-card-item group">
+  <div v-if="mode === 'en_cours'" class="mission-card-item group cursor-pointer" @click="$emit('select', mission)">
     <div class="flex items-center gap-2">
       <!-- Dot animé vert -->
       <span class="relative flex-shrink-0">
@@ -27,7 +27,11 @@
   </div>
 
   <!-- STAND-BY (hangar/refinement) -->
-  <div v-else-if="mode === 'stanby'" class="mission-card-item flex items-center gap-2 group">
+  <div
+    v-else-if="mode === 'stanby'"
+    class="mission-card-item flex items-center gap-2 group cursor-pointer"
+    @click="$emit('select', mission)"
+  >
     <span class="text-space-muted flex-shrink-0">□</span>
     <div class="flex-1 min-w-0">
       <div class="text-xs font-mono text-space-text truncate">{{ mission.titre }}</div>
@@ -36,12 +40,12 @@
       @click.stop="$emit('launch', mission)"
       class="flex-shrink-0 text-[10px] font-mono px-2 py-0.5 rounded bg-space-blue/10 text-space-blue border border-space-blue/20 hover:bg-space-blue/20 transition-colors opacity-0 group-hover:opacity-100"
     >
-      Lancer
+      ▶ Lancer
     </button>
   </div>
 
   <!-- INTERVENTION REQUISE -->
-  <div v-else-if="mode === 'intervention'" class="mission-card-item border-space-danger/30 group">
+  <div v-else-if="mode === 'intervention'" class="mission-card-item border-space-danger/30 group cursor-pointer" @click="$emit('select', mission)">
     <div class="flex items-center gap-2">
       <span class="text-space-danger flex-shrink-0 animate-ping-slow">⚠️</span>
       <div class="flex-1 min-w-0">
@@ -67,7 +71,7 @@ const props = defineProps({
   mode:    { type: String, default: 'stanby' }, // 'en_cours' | 'stanby' | 'intervention'
 })
 
-defineEmits(['launch'])
+defineEmits(['launch', 'select'])
 
 // Progression simulée basée sur l'id de la mission et le temps
 const progress = computed(() => {

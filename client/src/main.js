@@ -9,18 +9,22 @@ import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import './style.css'
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+// ─── Vues ────────────────────────────────────────────────────────────────────
 
 import SalleDesOperations from './views/SalleDesOperations.vue'
 import MissionDetail      from './views/MissionDetail.vue'
 import LoginView          from './views/LoginView.vue'
+import Starchive          from './views/Starchive.vue'
+
+// ─── Router ───────────────────────────────────────────────────────────────────
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/',           component: SalleDesOperations, name: 'home' },
-    { path: '/mission/:id', component: MissionDetail,     name: 'mission' },
-    { path: '/login',      component: LoginView,          name: 'login' },
+    { path: '/',            component: SalleDesOperations, name: 'home' },
+    { path: '/mission/:id', component: MissionDetail,      name: 'mission' },
+    { path: '/login',       component: LoginView,          name: 'login' },
+    { path: '/starchive',   component: Starchive,          name: 'starchive' },
   ]
 })
 

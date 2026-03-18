@@ -20,6 +20,7 @@ const agentsRouter   = require('./routes/agents');
 const hangarRouter   = require('./routes/hangar');
 const authRouter     = require('./routes/auth');
 const hooksRouter    = require('./hooks');
+const chatRouter     = require('./routes/chat');
 
 // WebSocket
 const { initWebSocket } = require('./websocket');
@@ -60,6 +61,7 @@ app.use('/hooks', hooksRouter);
 app.use('/api/missions', missionsRouter);
 app.use('/api/agents',   agentsRouter);
 app.use('/api/hangar',   hangarRouter);
+app.use('/api/chat',     chatRouter);
 
 // ─── Route de santé ───────────────────────────────────────────────────────────
 

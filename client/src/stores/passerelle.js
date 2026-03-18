@@ -112,8 +112,8 @@ export const usePasserelleStore = defineStore('passerelle', () => {
     return data
   }
 
-  async function lancerMission(missionId) {
-    const { data } = await api.post(`/missions/${missionId}/lancer`)
+  async function lancerMission(missionId, options = {}) {
+    const { data } = await api.post(`/missions/${missionId}/lancer`, options)
     if (data.success) {
       await Promise.all([fetchMissions(), fetchAgents()])
     }

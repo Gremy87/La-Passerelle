@@ -11,14 +11,10 @@
       <div class="flex-1 min-w-0">
         <div class="text-xs font-mono text-space-text truncate">{{ mission.titre }}</div>
       </div>
-      <div class="text-xs font-mono text-space-muted flex-shrink-0">{{ progress }}%</div>
     </div>
-    <!-- Barre de progression simulée -->
-    <div class="mt-1.5 h-1 bg-space-border rounded-full overflow-hidden">
-      <div
-        class="h-full bg-space-success rounded-full transition-all duration-1000"
-        :style="{ width: `${progress}%` }"
-      ></div>
+    <!-- Progression sémantique -->
+    <div class="mt-1.5 text-[10px] font-mono text-space-muted truncate">
+      {{ progressionLabel }}
     </div>
     <!-- Agent si assigné -->
     <div v-if="mission.agent_nom" class="mt-1 text-[10px] font-mono text-space-dim truncate">
@@ -65,6 +61,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { usePasserelleStore } from '../stores/passerelle'
 
 const props = defineProps({
   mission: { type: Object, required: true },
@@ -73,11 +70,41 @@ const props = defineProps({
 
 defineEmits(['launch', 'select'])
 
-// Progression simulée basée sur l'id de la mission et le temps
-const progress = computed(() => {
-  // Simulation déterministe basée sur l'id
-  const base = (props.mission.id * 37 + 13) % 70 + 20  // entre 20% et 90%
-  return Math.min(base, 90)
+const store = usePasserelleStore()
+
+// État sémantique du dernier log
+function getSemanticState(logs) {
+  if (!logs || logs.length === 0) return '⏳ En attente'
+  const last = logs[logs.length - 1]
+  const type = last.type || ''
+  const contenu = last.contenu || last.content || ''
+  if (type === 'tool_use') {
+    if (/Read|Glob|Grep/i.test(contenu)) return '🔍 Exploration'
+    if (/Edit|Write/i.test(contenu)) return '✏️ Écriture'
+    if (/Bash/i.test(contenu)) return '⚙️ Exécution'
+    return '⚙️ Exécution'
+  }
+  if (type === 'texte') return '💬 Réflexion'
+  return '⏳ En attente'
+}
+
+// Temps écoulé depuis created_at
+function tempsEcoule(createdAt) {
+  if (!createdAt) return ''
+  const diff = Date.now() - new Date(createdAt).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return '<1min'
+  if (mins < 60) return `${mins}min`
+  const hours = Math.floor(mins / 60)
+  return `${hours}h${mins % 60}min`
+}
+
+const progressionLabel = computed(() => {
+  const logs = store.missionLogs(props.mission.id)
+  const etat = getSemanticState(logs)
+  const actions = logs.length
+  const temps = tempsEcoule(props.mission.created_at)
+  return `${etat} · ${actions} actions · ${temps}`
 })
 </script>
 

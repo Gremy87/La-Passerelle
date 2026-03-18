@@ -186,23 +186,29 @@ const statutBadgeClass = computed(() => STATUT_CONFIG[props.mission?.statut]?.cl
 
 // ─── Formatage logs ───────────────────────────────────────────────────────────
 function logIcon(log) {
-  if (log.type === 'tool_use') return '🔧'
-  if (log.type === 'tool_result') return '✅'
-  if (log.type === 'error') return '❌'
-  if (log.type === 'notification') return '📢'
+  const t = log.type
+  if (t === 'tool_use') return '🔧'
+  if (t === 'tool_result') return '✅'
+  if (t === 'erreur' || t === 'error') return '❌'
+  if (t === 'notification') return '📢'
+  if (t === 'info') return 'ℹ️'
   return '›'
 }
 
 function logText(log) {
-  if (log.message) return log.message
-  if (log.tool_name) return `${log.tool_name}${log.tool_input ? ': ' + JSON.stringify(log.tool_input).slice(0, 80) : ''}`
+  // Extraire le texte lisible depuis contenu ou content
+  if (log.contenu && typeof log.contenu === 'string') return log.contenu
+  if (log.content && typeof log.content === 'string') return log.content
+  if (typeof log.message === 'string') return log.message
+  if (log.message?.contenu) return log.message.contenu
   return JSON.stringify(log).slice(0, 120)
 }
 
 function logLineClass(log) {
-  if (log.type === 'error') return 'text-space-danger'
-  if (log.type === 'tool_use') return 'text-space-blue'
-  if (log.type === 'notification') return 'text-yellow-400'
+  const t = log.type
+  if (t === 'erreur' || t === 'error') return 'text-space-danger'
+  if (t === 'tool_use') return 'text-space-blue'
+  if (t === 'notification') return 'text-yellow-400'
   return 'text-space-muted'
 }
 

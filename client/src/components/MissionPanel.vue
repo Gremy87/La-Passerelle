@@ -46,9 +46,18 @@
 
       <!-- Logs temps réel -->
       <div class="flex-1 overflow-y-auto p-3 space-y-1" ref="logContainer">
-        <div class="text-[10px] font-mono text-space-dim uppercase tracking-widest mb-2 flex items-center gap-2">
-          <span>📟 Logs</span>
-          <span v-if="logs.length > 0" class="text-space-success">{{ logs.length }} entrées</span>
+        <div class="text-[10px] font-mono text-space-dim uppercase tracking-widest mb-2 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span>📟 Logs</span>
+            <span v-if="logs.length > 0" class="text-space-success">{{ logs.length }} entrées</span>
+          </div>
+          <button
+            v-if="logs.length > 0"
+            @click="copyLogs"
+            class="px-2 py-0.5 rounded border border-space-border text-space-muted hover:text-space-text hover:border-space-blue/40 transition-colors"
+          >
+            {{ copyLabel }}
+          </button>
         </div>
 
         <div v-if="logs.length === 0" class="text-center text-space-dim text-xs font-mono py-6">
@@ -145,6 +154,7 @@ const chatStore = useChatStore()
 
 const logAnchor = ref(null)
 const replyText = ref('')
+const copyLabel = ref('Copier')
 const launching  = ref(false)
 const sending    = ref(false)
 const abandoning = ref(false)
@@ -205,6 +215,17 @@ function formatTs(ts) {
 function formatDate(iso) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
+
+// ─── Copier les logs ─────────────────────────────────────────────────────────
+
+async function copyLogs() {
+  const text = logs.value
+    .map(l => `${formatTs(l.timestamp)} ${logIcon(l)} ${logText(l)}`)
+    .join('\n')
+  await navigator.clipboard.writeText(text)
+  copyLabel.value = 'Copié ✓'
+  setTimeout(() => { copyLabel.value = 'Copier' }, 2000)
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────

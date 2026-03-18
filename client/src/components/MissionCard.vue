@@ -2,14 +2,17 @@
   <!-- MissionCard — Version compacte pour le panneau de supervision -->
 
   <!-- EN COURS -->
-  <div v-if="mode === 'en_cours'" class="mission-card-item group cursor-pointer" @click="$emit('select', mission)">
+  <div v-if="mode === 'en_cours'"
+    class="mission-card-en-cours group cursor-pointer"
+    @click="$emit('select', mission)"
+  >
     <div class="flex items-center gap-2">
-      <!-- Dot animé vert -->
+      <!-- Dot animé cyan -->
       <span class="relative flex-shrink-0">
-        <span class="dot-pulse"></span>
+        <span class="dot-pulse-cyan"></span>
       </span>
       <div class="flex-1 min-w-0">
-        <div class="text-xs font-mono text-space-text truncate">{{ mission.titre }}</div>
+        <div class="text-xs font-body font-medium text-space-text truncate">{{ mission.titre }}</div>
       </div>
     </div>
     <!-- Progression sémantique -->
@@ -17,7 +20,7 @@
       {{ progressionLabel }}
     </div>
     <!-- Agent si assigné -->
-    <div v-if="mission.agent_nom" class="mt-1 text-[10px] font-mono text-space-dim truncate">
+    <div v-if="mission.agent_nom" class="mt-1 text-[10px] font-mono text-space-cyan/70 truncate">
       ⚡ {{ mission.agent_nom }}
     </div>
   </div>
@@ -25,33 +28,36 @@
   <!-- STAND-BY (hangar/refinement) -->
   <div
     v-else-if="mode === 'stanby'"
-    class="mission-card-item flex items-center gap-2 group cursor-pointer"
+    class="mission-card-stanby flex items-center gap-2 group cursor-pointer"
     @click="$emit('select', mission)"
   >
-    <span class="text-space-muted flex-shrink-0">□</span>
+    <span class="text-space-amber/60 flex-shrink-0 text-xs">□</span>
     <div class="flex-1 min-w-0">
-      <div class="text-xs font-mono text-space-text truncate">{{ mission.titre }}</div>
+      <div class="text-xs font-body text-space-text truncate">{{ mission.titre }}</div>
     </div>
     <button
       @click.stop="$emit('launch', mission)"
-      class="flex-shrink-0 text-[10px] font-mono px-2 py-0.5 rounded bg-space-blue/10 text-space-blue border border-space-blue/20 hover:bg-space-blue/20 transition-colors opacity-0 group-hover:opacity-100"
+      class="flex-shrink-0 text-[10px] font-mono px-2 py-0.5 bg-space-amber/10 text-space-amber border border-space-amber/30 hover:bg-space-amber/20 transition-colors opacity-0 group-hover:opacity-100 lcars-btn"
     >
       ▶ Lancer
     </button>
   </div>
 
   <!-- INTERVENTION REQUISE -->
-  <div v-else-if="mode === 'intervention'" class="mission-card-item border-space-danger/30 group cursor-pointer" @click="$emit('select', mission)">
+  <div v-else-if="mode === 'intervention'"
+    class="mission-card-intervention group cursor-pointer"
+    @click="$emit('select', mission)"
+  >
     <div class="flex items-center gap-2">
-      <span class="text-space-danger flex-shrink-0 animate-ping-slow">⚠️</span>
+      <span class="text-space-orange flex-shrink-0 animate-ping-slow text-xs">⚠️</span>
       <div class="flex-1 min-w-0">
-        <div class="text-xs font-mono text-space-danger truncate font-medium">{{ mission.titre }}</div>
+        <div class="text-xs font-body text-space-orange truncate font-medium">{{ mission.titre }}</div>
       </div>
     </div>
     <div class="mt-1.5 flex gap-1.5">
       <router-link
         :to="`/mission/${mission.id}`"
-        class="flex-1 text-center text-[10px] font-mono px-2 py-1 rounded bg-space-danger/10 text-space-danger border border-space-danger/30 hover:bg-space-danger/20 transition-colors"
+        class="flex-1 text-center text-[10px] font-mono px-2 py-1 bg-space-orange/10 text-space-orange border border-space-orange/30 hover:bg-space-orange/20 transition-colors lcars-btn"
       >
         Répondre
       </router-link>
@@ -109,19 +115,50 @@ const progressionLabel = computed(() => {
 </script>
 
 <style scoped>
-.mission-card-item {
-  @apply p-2.5 rounded-lg border border-space-border bg-space-panel/50 hover:border-space-blue/30 transition-colors cursor-default;
+/* Card EN COURS — accent cyan */
+.mission-card-en-cours {
+  @apply p-2.5 border-l-[3px] border-space-cyan bg-space-cyan/5 hover:bg-space-cyan/10 transition-colors cursor-default;
+  border-top: 1px solid theme('colors.space.border');
+  border-right: 1px solid theme('colors.space.border');
+  border-bottom: 1px solid theme('colors.space.border');
+  border-radius: 0 4px 4px 0;
 }
 
-.dot-pulse {
-  @apply block w-2 h-2 rounded-full bg-space-success;
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  animation: pulse-ring 1.5s ease-out infinite;
+/* Card STAND-BY — accent amber */
+.mission-card-stanby {
+  @apply p-2.5 border-l-[3px] border-space-amber bg-space-amber/5 hover:bg-space-amber/10 transition-colors cursor-default;
+  border-top: 1px solid theme('colors.space.border');
+  border-right: 1px solid theme('colors.space.border');
+  border-bottom: 1px solid theme('colors.space.border');
+  border-radius: 0 4px 4px 0;
 }
 
-@keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70%  { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+/* Card INTERVENTION — accent orange + pulse */
+.mission-card-intervention {
+  @apply p-2.5 border-l-[3px] bg-space-orange/5 hover:bg-space-orange/10 transition-colors cursor-default;
+  border-color: #ea580c;
+  border-top: 1px solid rgba(234, 88, 12, 0.3);
+  border-right: 1px solid rgba(234, 88, 12, 0.3);
+  border-bottom: 1px solid rgba(234, 88, 12, 0.3);
+  border-radius: 0 4px 4px 0;
+  animation: border-pulse 2s ease-in-out infinite;
+}
+
+/* Dot animé cyan (remplace le vert) */
+.dot-pulse-cyan {
+  @apply block w-2 h-2 rounded-full bg-space-cyan;
+  box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7);
+  animation: pulse-ring-cyan 1.5s ease-out infinite;
+}
+
+@keyframes pulse-ring-cyan {
+  0%   { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
+  70%  { box-shadow: 0 0 0 6px rgba(6, 182, 212, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+
+@keyframes border-pulse {
+  0%, 100% { border-color: rgba(234, 88, 12, 0.4); }
+  50%       { border-color: rgba(234, 88, 12, 0.9); }
 }
 </style>

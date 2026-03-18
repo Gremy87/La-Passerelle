@@ -1,27 +1,33 @@
 <template>
   <!-- Fond principal de La Passerelle -->
-  <div class="min-h-screen bg-space-bg text-space-text font-sans">
-    <!-- Barre de navigation globale -->
-    <nav class="border-b border-space-border bg-space-panel/80 backdrop-blur sticky top-0 z-50">
+  <div class="min-h-screen bg-space-bg text-space-text font-body">
+    <!-- Barre de navigation globale — style LCARS -->
+    <nav class="border-b border-space-cyan/30 bg-space-panel/90 backdrop-blur sticky top-0 z-50">
       <div class="px-4 h-12 flex items-center justify-between">
         <!-- Logo + titre -->
-        <router-link to="/" class="flex items-center gap-2 text-space-text hover:text-space-blue transition-colors">
-          <span class="text-space-blue font-mono font-bold text-lg">⚡</span>
-          <span class="font-mono font-bold tracking-wider text-sm">CENTRE DE COMMANDEMENT</span>
+        <router-link to="/" class="flex items-center gap-3 text-space-text hover:text-space-cyan transition-colors">
+          <span class="text-space-cyan font-mono font-bold text-lg">⚡</span>
+          <div class="flex flex-col leading-none">
+            <span class="font-display text-xs font-semibold tracking-wider text-space-text uppercase">CENTRE DE COMMANDEMENT</span>
+            <span class="font-mono text-[10px] text-space-muted tracking-wide">La Passerelle</span>
+          </div>
         </router-link>
 
         <!-- Indicateurs globaux -->
         <div class="flex items-center gap-4">
           <!-- Badge interventions urgentes -->
           <div v-if="store.interventionsCount > 0"
-               class="flex items-center gap-1.5 px-3 py-1 bg-space-danger/20 border border-space-danger/40 rounded-full text-space-danger text-xs font-mono animate-pulse">
+               class="flex items-center gap-1.5 px-3 py-1 bg-space-orange/20 border border-space-orange/40 text-space-orange text-xs font-mono animate-pulse lcars-btn">
             <span>🚨</span>
             <span>{{ store.interventionsCount }} intervention{{ store.interventionsCount > 1 ? 's' : '' }}</span>
           </div>
 
           <!-- Statut WebSocket -->
-          <div class="flex items-center gap-1.5 text-xs font-mono" :class="store.connected ? 'text-space-success' : 'text-space-muted'">
-            <span class="status-dot" :class="store.connected ? 'en_mission' : 'libre'"></span>
+          <div class="flex items-center gap-1.5 text-xs font-mono" :class="store.connected ? 'text-space-cyan' : 'text-space-muted'">
+            <span
+              class="w-2 h-2 rounded-full inline-block"
+              :class="store.connected ? 'bg-space-cyan animate-pulse' : 'bg-space-muted'"
+            ></span>
             <span>{{ store.connected ? 'En ligne' : 'Hors ligne' }}</span>
           </div>
 

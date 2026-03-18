@@ -3,19 +3,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Variables globales — Thème dark space ── */
+/* ── Variables globales — Thème Star Trek / Space Opera LCARS ── */
 :root {
-  --bg:       #0a0e1a;
-  --panel:    #111827;
-  --card:     #1a2235;
-  --border:   #1e293b;
+  --bg:       #050810;
+  --panel:    #0a0f1e;
+  --card:     #0d1428;
+  --border:   #1a2744;
   --blue:     #3b82f6;
-  --cyan:     #22d3ee;
+  --cyan:     #06b6d4;
+  --amber:    #f59e0b;
+  --orange:   #ea580c;
   --success:  #10b981;
   --warning:  #f59e0b;
   --danger:   #ef4444;
-  --text:     #e2e8f0;
-  --muted:    #64748b;
+  --text:     #c8d8f0;
+  --muted:    #4a6080;
+  --dim:      #2a3a50;
 }
 
 /* ── Base ── */
@@ -28,7 +31,7 @@ html, body {
   padding: 0;
   background-color: var(--bg);
   color: var(--text);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Exo 2', 'Inter', system-ui, sans-serif;
   height: 100%;
 }
 
@@ -38,18 +41,34 @@ html, body {
 
 /* ── Scrollbar custom ── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: var(--panel);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2d3f5a;
+  background: #1a3050;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--blue);
+  background: var(--cyan);
+}
+
+/* ── Scanlines — effet CRT subtil ── */
+.scanlines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(6, 182, 212, 0.03) 2px,
+    rgba(6, 182, 212, 0.03) 4px
+  );
+}
+
+/* ── Bouton LCARS — coins coupés style Star Trek ── */
+.lcars-btn {
+  clip-path: polygon(8px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 8px);
 }
 
 /* ── Utilitaires custom ── */
@@ -61,34 +80,36 @@ html, body {
 
   /* Badge statut */
   .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono font-medium;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-medium;
+    clip-path: polygon(6px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 6px);
   }
 
-  .badge-hangar      { @apply badge bg-space-muted/20 text-space-muted; }
-  .badge-en_cours    { @apply badge bg-space-blue/20 text-space-blue; }
-  .badge-intervention { @apply badge bg-space-danger/20 text-space-danger; }
-  .badge-terminee    { @apply badge bg-space-success/20 text-space-success; }
-  .badge-abandonnee  { @apply badge bg-space-dim/20 text-space-dim; }
-  .badge-refinement  { @apply badge bg-space-warning/20 text-space-warning; }
+  .badge-hangar       { @apply badge bg-space-muted/20 text-space-muted; }
+  .badge-en_cours     { @apply badge bg-space-cyan/20 text-space-cyan; }
+  .badge-intervention { @apply badge bg-space-orange/20 text-space-orange; }
+  .badge-terminee     { @apply badge bg-space-success/20 text-space-success; }
+  .badge-abandonnee   { @apply badge bg-space-dim/20 text-space-dim; }
+  .badge-refinement   { @apply badge bg-space-amber/20 text-space-amber; }
 
   /* Bouton principal */
   .btn-primary {
-    @apply px-4 py-2 bg-space-blue hover:bg-blue-500 text-white rounded-md font-medium text-sm transition-colors;
+    @apply px-4 py-2 bg-space-blue hover:bg-blue-500 text-white font-medium text-sm transition-colors font-body;
+    clip-path: polygon(8px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 8px);
   }
 
   /* Bouton secondaire */
   .btn-secondary {
-    @apply px-4 py-2 bg-space-card hover:bg-space-border text-space-text rounded-md font-medium text-sm transition-colors border border-space-border;
+    @apply px-4 py-2 bg-space-card hover:bg-space-border text-space-text font-medium text-sm transition-colors border border-space-border font-body;
   }
 
   /* Bouton danger */
   .btn-danger {
-    @apply px-4 py-2 bg-space-danger/20 hover:bg-space-danger/30 text-space-danger rounded-md font-medium text-sm transition-colors border border-space-danger/30;
+    @apply px-4 py-2 bg-space-danger/20 hover:bg-space-danger/30 text-space-danger font-medium text-sm transition-colors border border-space-danger/30 font-body;
   }
 
   /* Input */
   .input {
-    @apply w-full px-3 py-2 bg-space-bg border border-space-border rounded-md text-space-text placeholder-space-muted focus:outline-none focus:border-space-blue text-sm font-mono;
+    @apply w-full px-3 py-2 bg-space-bg border border-space-border rounded-md text-space-text placeholder-space-muted focus:outline-none focus:border-space-cyan/60 focus:shadow-[0_0_12px_rgba(6,182,212,0.15)] text-sm font-mono transition-all;
   }
 
   /* Textarea */
@@ -101,8 +122,8 @@ html, body {
     @apply w-2 h-2 rounded-full inline-block;
   }
   .status-dot.libre         { @apply bg-space-muted; }
-  .status-dot.en_mission    { @apply bg-space-blue animate-pulse; }
-  .status-dot.intervention  { @apply bg-space-danger animate-ping-slow; }
+  .status-dot.en_mission    { @apply bg-space-cyan animate-pulse; }
+  .status-dot.intervention  { @apply bg-space-orange animate-ping-slow; }
   .status-dot.hors_ligne    { @apply bg-space-dim; }
 
   /* Barre de progression "bouclier de vaisseau" */
@@ -120,6 +141,18 @@ html, body {
   .log-line-tool     { @apply text-space-cyan; }
   .log-line-info     { @apply text-space-muted; }
   .log-line-erreur   { @apply text-space-danger; }
-  .log-line-amiral   { @apply text-space-warning; }
+  .log-line-amiral   { @apply text-space-amber; }
   .log-line-agent    { @apply text-space-text; }
+
+  /* Accent LCARS pour les headers de section */
+  .lcars-section-header {
+    @apply flex items-center gap-2 font-display text-xs uppercase tracking-widest;
+  }
+  .lcars-section-header::before {
+    content: '';
+    @apply block w-1 h-4 rounded-sm flex-shrink-0;
+  }
+  .lcars-section-header.accent-cyan::before  { @apply bg-space-cyan; }
+  .lcars-section-header.accent-amber::before { @apply bg-space-amber; }
+  .lcars-section-header.accent-orange::before { @apply bg-space-orange; }
 }

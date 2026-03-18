@@ -3,17 +3,17 @@
   <div class="h-[calc(100vh-48px)] flex">
 
     <!-- ── Colonne gauche : Chat central (70%) ─────────────────────────────── -->
-    <div class="flex-1 flex flex-col border-r border-space-border" style="width: 70%">
+    <div class="flex-1 flex flex-col border-r border-space-cyan/20" style="width: 70%">
 
       <!-- Header chat -->
-      <div class="px-4 py-2.5 border-b border-space-border flex items-center justify-between flex-shrink-0">
+      <div class="px-4 py-2.5 border-b border-space-border flex items-center justify-between flex-shrink-0 bg-space-panel">
         <div class="flex items-center gap-2">
-          <span class="text-space-blue">💬</span>
-          <span class="text-sm font-mono font-semibold text-space-text tracking-wide">LA PASSERELLE</span>
+          <span class="text-space-cyan">💬</span>
+          <span class="font-display text-xs font-semibold text-space-text tracking-wider uppercase">LA PASSERELLE</span>
         </div>
         <div class="flex items-center gap-3 text-xs font-mono text-space-muted">
-          <span v-if="store.connected" class="flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-space-success inline-block"></span>
+          <span v-if="store.connected" class="flex items-center gap-1 text-space-cyan">
+            <span class="w-1.5 h-1.5 rounded-full bg-space-cyan inline-block animate-pulse"></span>
             En ligne
           </span>
           <span v-else class="flex items-center gap-1 text-space-danger">
@@ -33,7 +33,7 @@
       />
 
       <!-- Input en bas -->
-      <div class="px-4 py-3 border-t border-space-border flex-shrink-0">
+      <div class="px-4 py-3 border-t border-space-border flex-shrink-0 bg-space-panel/50">
         <form @submit.prevent="handleSend" class="flex gap-2 items-end">
           <textarea
             v-model="inputText"
@@ -41,7 +41,7 @@
             @keydown.enter.shift.exact="() => {}"
             rows="1"
             placeholder="Décris ta prochaine mission..."
-            class="flex-1 bg-space-panel border border-space-border rounded-xl px-4 py-2.5 text-sm font-mono text-space-text placeholder-space-dim focus:outline-none focus:border-space-blue/60 transition-colors resize-none leading-relaxed"
+            class="flex-1 bg-space-bg border border-space-border px-4 py-2.5 text-sm font-mono text-space-text placeholder-space-dim focus:outline-none focus:border-space-cyan/60 focus:shadow-[0_0_12px_rgba(6,182,212,0.15)] transition-all resize-none leading-relaxed rounded-lg"
             style="max-height: 120px; overflow-y: auto;"
             @input="autoResize"
             ref="textarea"
@@ -49,7 +49,7 @@
           <button
             type="submit"
             :disabled="!inputText.trim() || chatStore.loading"
-            class="flex-shrink-0 w-10 h-10 rounded-xl bg-space-blue text-white flex items-center justify-center hover:bg-space-blue/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            class="flex-shrink-0 w-10 h-10 bg-space-cyan/20 border border-space-cyan/40 text-space-cyan flex items-center justify-center hover:bg-space-cyan/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all lcars-btn"
           >
             <span class="text-sm">→</span>
           </button>
@@ -65,10 +65,9 @@
 
       <!-- Section EN COURS -->
       <div class="flex-shrink-0">
-        <div class="px-3 py-2 border-b border-space-border flex items-center gap-2">
-          <span class="text-space-success text-xs">📡</span>
-          <span class="text-xs font-mono text-space-muted uppercase tracking-widest">EN COURS</span>
-          <span class="ml-auto text-xs font-mono text-space-success">{{ missionEnCours.length }}</span>
+        <div class="px-3 py-2 border-b border-space-border bg-space-panel flex items-center gap-2" style="border-left: 4px solid #06b6d4;">
+          <span class="font-display text-[10px] text-space-cyan uppercase tracking-widest">EN COURS</span>
+          <span class="ml-auto text-[10px] font-mono text-space-cyan">{{ missionEnCours.length }}</span>
         </div>
         <div class="p-2 space-y-1.5 max-h-48 overflow-y-auto">
           <MissionCard
@@ -78,7 +77,7 @@
             mode="en_cours"
             @select="handleSelect"
           />
-          <div v-if="missionEnCours.length === 0" class="text-center text-space-dim text-xs font-mono py-3">
+          <div v-if="missionEnCours.length === 0" class="text-center text-space-dim text-[10px] font-mono py-3">
             Aucune mission active
           </div>
         </div>
@@ -89,10 +88,9 @@
 
       <!-- Section STAND-BY -->
       <div class="flex-shrink-0">
-        <div class="px-3 py-2 border-b border-space-border flex items-center gap-2">
-          <span class="text-xs">⏸️</span>
-          <span class="text-xs font-mono text-space-muted uppercase tracking-widest">STAND-BY</span>
-          <span class="ml-auto text-xs font-mono text-space-muted">{{ missionStandBy.length }}</span>
+        <div class="px-3 py-2 border-b border-space-border bg-space-panel flex items-center gap-2" style="border-left: 4px solid #f59e0b;">
+          <span class="font-display text-[10px] text-space-amber uppercase tracking-widest">STAND-BY</span>
+          <span class="ml-auto text-[10px] font-mono text-space-muted">{{ missionStandBy.length }}</span>
         </div>
         <div class="p-2 space-y-1.5 max-h-48 overflow-y-auto">
           <MissionCard
@@ -103,7 +101,7 @@
             @launch="handleLaunch"
             @select="handleSelect"
           />
-          <div v-if="missionStandBy.length === 0" class="text-center text-space-dim text-xs font-mono py-3">
+          <div v-if="missionStandBy.length === 0" class="text-center text-space-dim text-[10px] font-mono py-3">
             Hangar vide
           </div>
         </div>
@@ -115,17 +113,19 @@
       <!-- Section INTERVENTION REQUISE -->
       <div class="flex-1 flex flex-col overflow-hidden">
         <div
-          class="px-3 py-2 border-b border-space-border flex items-center gap-2 flex-shrink-0"
-          :class="missionIntervention.length > 0 ? 'bg-space-danger/5' : ''"
+          class="px-3 py-2 border-b border-space-border flex items-center gap-2 flex-shrink-0 bg-space-panel"
+          :class="missionIntervention.length > 0 ? 'bg-space-orange/5' : ''"
+          :style="missionIntervention.length > 0 ? 'border-left: 4px solid #ea580c' : 'border-left: 4px solid #2a3a50'"
         >
-          <span class="text-xs">🚨</span>
-          <span class="text-xs font-mono uppercase tracking-widest"
-                :class="missionIntervention.length > 0 ? 'text-space-danger' : 'text-space-muted'">
+          <span
+            class="font-display text-[10px] uppercase tracking-widest"
+            :class="missionIntervention.length > 0 ? 'text-space-orange' : 'text-space-muted'"
+          >
             INTERVENTION
           </span>
           <span
-            class="ml-auto text-xs font-mono"
-            :class="missionIntervention.length > 0 ? 'text-space-danger font-bold' : 'text-space-muted'"
+            class="ml-auto text-[10px] font-mono font-bold"
+            :class="missionIntervention.length > 0 ? 'text-space-orange' : 'text-space-muted'"
           >
             {{ missionIntervention.length }}
           </span>
@@ -138,7 +138,7 @@
             mode="intervention"
             @select="handleSelect"
           />
-          <div v-if="missionIntervention.length === 0" class="text-center text-space-dim text-xs font-mono py-3">
+          <div v-if="missionIntervention.length === 0" class="text-center text-space-dim text-[10px] font-mono py-3">
             Tout roule ✓
           </div>
         </div>
@@ -148,7 +148,7 @@
       <div class="border-t border-space-border flex-shrink-0 p-3 space-y-2">
         <router-link
           to="/starchive"
-          class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-space-border text-xs font-mono text-space-muted hover:text-space-text hover:border-space-blue/40 transition-colors"
+          class="flex items-center justify-center gap-2 w-full px-3 py-2 border border-space-border text-[10px] font-mono text-space-muted hover:text-space-cyan hover:border-space-cyan/40 transition-colors lcars-btn"
         >
           <span>📁</span>
           <span>Starchives</span>

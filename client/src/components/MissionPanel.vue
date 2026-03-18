@@ -1,11 +1,11 @@
 <template>
-  <!-- MissionPanel — Panel latéral slide-in pour le détail d'une mission -->
+  <!-- MissionPanel — Panel latéral slide-in style LCARS -->
 
   <!-- Overlay sombre -->
   <Transition name="overlay-fade">
     <div
       v-if="mission"
-      class="fixed inset-0 bg-black/40 z-40"
+      class="fixed inset-0 bg-black/60 z-40"
       @click="$emit('close')"
     ></div>
   </Transition>
@@ -15,25 +15,27 @@
     <aside
       v-if="mission"
       class="fixed right-0 top-0 h-full w-[420px] max-w-full bg-space-bg border-l border-space-border z-50 flex flex-col shadow-2xl"
+      style="border-top: 3px solid #06b6d4;"
     >
       <!-- Header -->
-      <div class="px-4 py-3 border-b border-space-border flex items-start gap-3 flex-shrink-0">
+      <div class="px-4 py-3 border-b border-space-border flex items-start gap-3 flex-shrink-0 bg-space-panel">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-0.5">
             <span class="text-[10px] font-mono text-space-dim uppercase tracking-widest">#{{ mission.id }}</span>
             <span
-              class="text-[10px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wide"
+              class="text-[10px] font-mono px-2 py-0.5 uppercase tracking-wide"
               :class="statutBadgeClass"
+              style="clip-path: polygon(6px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 6px);"
             >{{ statutLabel }}</span>
           </div>
-          <h2 class="text-sm font-mono font-semibold text-space-text leading-snug">{{ mission.titre }}</h2>
-          <div v-if="mission.agent_nom" class="mt-1 text-[10px] font-mono text-space-muted">
+          <h2 class="text-sm font-body font-semibold text-space-text leading-snug">{{ mission.titre }}</h2>
+          <div v-if="mission.agent_nom" class="mt-1 text-[10px] font-mono text-space-cyan/70">
             ⚡ {{ mission.agent_nom }}
           </div>
         </div>
         <button
           @click="$emit('close')"
-          class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-space-muted hover:text-space-text hover:bg-space-panel transition-colors text-xs"
+          class="flex-shrink-0 w-7 h-7 flex items-center justify-center text-space-muted hover:text-space-cyan hover:bg-space-panel/80 transition-colors text-xs border border-space-border lcars-btn"
         >
           ✕
         </button>
@@ -44,17 +46,17 @@
         <p class="text-xs font-mono text-space-muted leading-relaxed">{{ mission.description }}</p>
       </div>
 
-      <!-- Logs temps réel -->
-      <div class="flex-1 overflow-y-auto p-3 space-y-1" ref="logContainer">
+      <!-- Logs temps réel — fond space-bg avec scanlines -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-1 scanlines" ref="logContainer" style="background-color: #050810;">
         <div class="text-[10px] font-mono text-space-dim uppercase tracking-widest mb-2 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span>📟 Logs</span>
-            <span v-if="logs.length > 0" class="text-space-success">{{ logs.length }} entrées</span>
+            <span>📟 LOGS</span>
+            <span v-if="logs.length > 0" class="text-space-cyan">{{ logs.length }} entrées</span>
           </div>
           <button
             v-if="logs.length > 0"
             @click="copyLogs"
-            class="px-2 py-0.5 rounded border border-space-border text-space-muted hover:text-space-text hover:border-space-blue/40 transition-colors"
+            class="px-2 py-0.5 border border-space-border text-space-muted hover:text-space-cyan hover:border-space-cyan/40 transition-colors text-[10px] font-mono lcars-btn"
           >
             {{ copyLabel }}
           </button>
@@ -81,7 +83,7 @@
       </div>
 
       <!-- Zone d'action bas de panel -->
-      <div class="border-t border-space-border p-3 flex-shrink-0 space-y-2">
+      <div class="border-t border-space-border p-3 flex-shrink-0 space-y-2 bg-space-panel">
 
         <!-- HANGAR : bouton lancer -->
         <div v-if="mission.statut === 'hangar'" class="space-y-2">
@@ -89,14 +91,14 @@
             <input
               type="checkbox"
               v-model="skipPermissions"
-              class="w-3.5 h-3.5 rounded accent-space-danger cursor-pointer"
+              class="w-3.5 h-3.5 rounded accent-space-orange cursor-pointer"
             />
             <span>⚠️ Lancer sans demande de permissions (dangereux)</span>
           </label>
           <button
             @click="handleLancer"
             :disabled="launching"
-            class="w-full py-2.5 rounded-xl bg-space-blue text-white text-sm font-mono font-semibold hover:bg-space-blue/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            class="w-full py-2.5 bg-space-cyan/20 border border-space-cyan/40 text-space-cyan text-sm font-mono font-semibold hover:bg-space-cyan/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 lcars-btn"
           >
             <span>🚀</span>
             <span>{{ launching ? 'Lancement...' : 'Lancer maintenant' }}</span>
@@ -105,7 +107,7 @@
 
         <!-- INTERVENTION : champ réponse -->
         <div v-else-if="mission.statut === 'intervention'" class="space-y-2">
-          <div class="text-[10px] font-mono text-space-danger flex items-center gap-1.5">
+          <div class="text-[10px] font-mono text-space-orange flex items-center gap-1.5">
             <span class="animate-pulse">⚠️</span>
             <span>L'agent attend votre réponse</span>
           </div>
@@ -114,32 +116,16 @@
               v-model="replyText"
               type="text"
               placeholder="Votre réponse à l'agent..."
-              class="flex-1 bg-space-panel border border-space-danger/40 rounded-xl px-3 py-2 text-sm font-mono text-space-text placeholder-space-dim focus:outline-none focus:border-space-danger/70 transition-colors"
+              class="flex-1 bg-space-bg border border-space-orange/40 px-3 py-2 text-sm font-mono text-space-text placeholder-space-dim focus:outline-none focus:border-space-orange/70 transition-colors rounded-lg"
             />
             <button
               type="submit"
               :disabled="!replyText.trim() || sending"
-              class="flex-shrink-0 px-4 py-2 rounded-xl bg-space-danger text-white text-sm font-mono hover:bg-space-danger/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              class="flex-shrink-0 px-4 py-2 bg-space-orange/20 border border-space-orange/40 text-space-orange text-sm font-mono hover:bg-space-orange/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all lcars-btn"
             >
               →
             </button>
           </form>
-        </div>
-
-        <!-- TERMINÉE / ABANDONNÉE avec session_id : bouton Reprendre -->
-        <div v-if="['terminee', 'abandonnee'].includes(mission.statut) && mission.session_id" class="space-y-2">
-          <div class="text-[10px] font-mono text-space-dim flex items-center gap-1.5">
-            <span>🔑</span>
-            <span class="truncate">Session : {{ mission.session_id }}</span>
-          </div>
-          <button
-            @click="handleReprendre"
-            :disabled="resuming"
-            class="w-full py-2.5 rounded-xl bg-space-blue/80 text-white text-sm font-mono font-semibold hover:bg-space-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-          >
-            <span>↩️</span>
-            <span>{{ resuming ? 'Reprise...' : 'Reprendre la session' }}</span>
-          </button>
         </div>
 
         <!-- Bouton Abandonner (missions actives) -->
@@ -147,7 +133,7 @@
           v-if="['en_cours', 'intervention', 'refinement'].includes(mission.statut)"
           @click="handleAbandonner"
           :disabled="abandoning"
-          class="w-full py-2 rounded-xl border border-space-danger/30 text-space-danger text-xs font-mono hover:bg-space-danger/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          class="w-full py-2 border border-space-danger/30 text-space-danger text-xs font-mono hover:bg-space-danger/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 lcars-btn"
         >
           <span>🛑</span>
           <span>{{ abandoning ? 'Abandon...' : 'Abandonner la mission' }}</span>
@@ -183,7 +169,6 @@ const copyLabel = ref('Copier')
 const launching      = ref(false)
 const sending        = ref(false)
 const abandoning     = ref(false)
-const resuming       = ref(false)
 const skipPermissions = ref(false)
 
 // ─── Logs réactifs via le store ───────────────────────────────────────────────
@@ -200,12 +185,12 @@ watch(() => logs.value.length, async () => {
 
 // ─── Statut badge ─────────────────────────────────────────────────────────────
 const STATUT_CONFIG = {
-  hangar:       { label: 'Stand-by',   class: 'bg-space-muted/10 text-space-muted border border-space-muted/20' },
-  en_cours:     { label: 'En cours',   class: 'bg-space-success/10 text-space-success border border-space-success/20' },
-  intervention: { label: 'Intervention', class: 'bg-space-danger/10 text-space-danger border border-space-danger/30' },
-  terminee:     { label: 'Terminée',   class: 'bg-space-blue/10 text-space-blue border border-space-blue/20' },
-  abandonnee:   { label: 'Abandonnée', class: 'bg-space-muted/10 text-space-muted border border-space-muted/20' },
-  refinement:   { label: 'Refinement', class: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' },
+  hangar:       { label: 'Stand-by',    class: 'bg-space-muted/10 text-space-muted border border-space-muted/20' },
+  en_cours:     { label: 'En cours',    class: 'bg-space-cyan/10 text-space-cyan border border-space-cyan/20' },
+  intervention: { label: 'Intervention', class: 'bg-space-orange/10 text-space-orange border border-space-orange/30' },
+  terminee:     { label: 'Terminée',    class: 'bg-space-success/10 text-space-success border border-space-success/20' },
+  abandonnee:   { label: 'Abandonnée',  class: 'bg-space-muted/10 text-space-muted border border-space-muted/20' },
+  refinement:   { label: 'Refinement',  class: 'bg-space-amber/10 text-space-amber border border-space-amber/20' },
 }
 
 const statutLabel = computed(() => STATUT_CONFIG[props.mission?.statut]?.label || props.mission?.statut || '')
@@ -223,7 +208,6 @@ function logIcon(log) {
 }
 
 function logText(log) {
-  // Extraire le texte lisible depuis contenu ou content
   if (log.contenu && typeof log.contenu === 'string') return log.contenu
   if (log.content && typeof log.content === 'string') return log.content
   if (typeof log.message === 'string') return log.message
@@ -234,8 +218,8 @@ function logText(log) {
 function logLineClass(log) {
   const t = log.type
   if (t === 'erreur' || t === 'error') return 'text-space-danger'
-  if (t === 'tool_use') return 'text-space-blue'
-  if (t === 'notification') return 'text-yellow-400'
+  if (t === 'tool_use') return 'text-space-cyan'
+  if (t === 'notification') return 'text-space-amber'
   return 'text-space-muted'
 }
 
@@ -251,7 +235,6 @@ function formatDate(iso) {
 }
 
 // ─── Copier les logs ─────────────────────────────────────────────────────────
-
 async function copyLogs() {
   const text = logs.value
     .map(l => `${formatTs(l.timestamp)} ${logIcon(l)} ${logText(l)}`)
@@ -262,7 +245,6 @@ async function copyLogs() {
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
-
 async function handleLancer() {
   if (!props.mission || launching.value) return
   launching.value = true
@@ -289,20 +271,6 @@ async function handleReply() {
     console.error('❌ Reply to agent:', err.message)
   } finally {
     sending.value = false
-  }
-}
-
-async function handleReprendre() {
-  if (!props.mission || resuming.value) return
-  resuming.value = true
-  try {
-    await store.reprendreMission(props.mission.id)
-    chatStore.addAssistantMessage(`↩️ Session reprise pour "${props.mission.titre}" !`)
-    emit('close')
-  } catch (err) {
-    console.error('❌ Reprendre session:', err.message)
-  } finally {
-    resuming.value = false
   }
 }
 

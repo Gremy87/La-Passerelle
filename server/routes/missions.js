@@ -175,6 +175,103 @@ router.delete('/:id', (req, res) => {
 });
 
 /**
+ * POST /api/missions/:id/lancer
+ * Lance réellement un agent Claude Code pour la mission
+ */
+router.post('/:id/lancer', (req, res) => {
+  const { spawn } = require('child_process');
+  const path = require('path');
+
+  try {
+    const mission = db.prepare(`
+      SELECT * FROM missions WHERE id = ?
+    `).get(req.params.id);
+
+    if (!mission) {
+      return res.status(404).json({ error: 'Mission introuvable' });
+    }
+
+    if (mission.statut !== 'hangar') {
+      return res.status(400).json({
+        error: `Impossible de lancer une mission en statut "${mission.statut}" (attendu: hangar)`,
+      });
+    }
+
+    // Chercher un agent libre
+    const agent = db.prepare(`
+      SELECT * FROM agents WHERE statut = 'libre' LIMIT 1
+    `).get();
+
+    if (!agent) {
+      return res.status(409).json({ error: 'Aucun agent disponible (tous en mission ou hors ligne)' });
+    }
+
+    // Assigner l'agent à la mission
+    db.prepare(`
+      UPDATE agents SET statut = 'en_mission', mission_id = ? WHERE id = ?
+    `).run(mission.id, agent.id);
+
+    // Passer la mission en_cours
+    db.prepare(`
+      UPDATE missions SET statut = 'en_cours', agent_id = ? WHERE id = ?
+    `).run(agent.id, mission.id);
+
+    // Notifier via WebSocket
+    const updatedMission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission.id);
+    const updatedAgent   = db.prepare('SELECT * FROM agents WHERE id = ?').get(agent.id);
+    events.missionUpdate(updatedMission);
+    events.agentStatus(updatedAgent);
+
+    // Préparer les arguments de launch-agent.js
+    const launchScript = path.join(__dirname, '../../agents/launch-agent.js');
+    const args = [
+      launchScript,
+      `--mission-id=${mission.id}`,
+      `--title=${mission.titre}`,
+      `--description=${mission.description}`,
+    ];
+    if (mission.repo_path) {
+      args.push(`--repo-path=${mission.repo_path}`);
+    }
+
+    // Lancer l'agent en child_process détaché
+    // NODE_PATH pointe vers server/node_modules pour que launch-agent.js trouve le SDK
+    const serverNodeModules = path.join(__dirname, '../node_modules');
+    const nodePath = process.env.NODE_PATH
+      ? `${serverNodeModules}:${process.env.NODE_PATH}`
+      : serverNodeModules;
+
+    const child = spawn(process.execPath, args, {
+      detached: true,
+      stdio:    'ignore',
+      env:      { ...process.env, NODE_PATH: nodePath },
+    });
+
+    const pid = child.pid;
+    child.unref(); // Ne pas bloquer le processus parent
+
+    // Stocker le PID dans la table agents
+    db.prepare('UPDATE agents SET pid = ? WHERE id = ?').run(pid, agent.id);
+
+    // Gérer le cas où le child plante immédiatement
+    child.on('error', (err) => {
+      console.error(`❌ Erreur spawn agent mission #${mission.id} :`, err.message);
+      // Remettre en erreur
+      db.prepare("UPDATE missions SET statut = 'erreur' WHERE id = ?").run(mission.id);
+      db.prepare("UPDATE agents SET statut = 'libre', mission_id = NULL WHERE id = ?").run(agent.id);
+    });
+
+    console.log(`🚀 Agent #${agent.id} (PID ${pid}) lancé pour mission #${mission.id}`);
+
+    res.json({ success: true, agent_id: agent.id, pid, mission_id: mission.id });
+
+  } catch (err) {
+    console.error('❌ POST /missions/:id/lancer:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * POST /api/missions/:id/message
  * Envoyer un message à l'agent en cours (réponse de l'Amiral)
  */

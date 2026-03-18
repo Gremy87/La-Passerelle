@@ -171,8 +171,14 @@ function scrollToBottom() {
 }
 
 async function lancerMission() {
-  await store.updateMission(mission.value.id, { statut: 'en_cours' })
-  mission.value.statut = 'en_cours'
+  try {
+    const data = await store.lancerMission(mission.value.id)
+    if (data?.success) {
+      mission.value.statut = 'en_cours'
+    }
+  } catch (err) {
+    alert(`Impossible de lancer la mission : ${err.message || err}`)
+  }
 }
 
 async function abandonnerMission() {

@@ -156,17 +156,29 @@ router.post('/task-completed', (req, res) => {
 
   try {
     if (mission_id) {
+      const mission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
+
       db.prepare(`
         UPDATE missions 
         SET statut = 'terminee', completed_at = datetime('now')
         WHERE id = ?
       `).run(mission_id);
 
+      // Libérer l'agent assigné
+      const agentIdToFree = mission?.agent_id || agent_id;
+      if (agentIdToFree) {
+        db.prepare(`
+          UPDATE agents SET statut = 'libre', mission_id = NULL, pid = NULL WHERE id = ?
+        `).run(agentIdToFree);
+        const updatedAgent = db.prepare('SELECT * FROM agents WHERE id = ?').get(agentIdToFree);
+        if (updatedAgent) events.agentStatus(updatedAgent);
+      }
+
       const updatedMission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
       events.missionUpdate(updatedMission);
 
       const message = summary || 'Mission accomplie 🎯';
-      logMessage(mission_id, agent_id, 'agent', message, 'info');
+      logMessage(mission_id, agentIdToFree, 'agent', message, 'info');
     }
 
     res.json({ ok: true });
@@ -206,6 +218,103 @@ router.post('/notification', (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('❌ Hook notification error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /hooks/agent-log
+ * Reçoit les logs streamés depuis launch-agent.js
+ */
+router.post('/agent-log', (req, res) => {
+  const { mission_id, type, content } = req.body;
+
+  try {
+    if (!mission_id || !content) {
+      return res.status(400).json({ error: 'mission_id et content sont requis' });
+    }
+
+    const mission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
+    const agentId = mission?.agent_id || null;
+
+    // Mapper le type SDK vers le type BDD
+    const typeDb = ['texte', 'tool_use', 'tool_result', 'erreur', 'info'].includes(type)
+      ? type
+      : 'info';
+
+    const result = db.prepare(`
+      INSERT INTO messages (mission_id, agent_id, role, contenu, type)
+      VALUES (?, ?, 'agent', ?, ?)
+    `).run(mission_id, agentId, content, typeDb);
+
+    const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(result.lastInsertRowid);
+
+    // Broadcast WebSocket
+    events.agentLog(mission_id, message);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('❌ Hook agent-log error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /hooks/agent-error
+ * L'agent a planté — remettre la mission en statut erreur
+ */
+router.post('/agent-error', (req, res) => {
+  const { mission_id, error } = req.body;
+  console.error(`❌ Hook agent-error — mission: ${mission_id} — ${error}`);
+
+  try {
+    if (mission_id) {
+      const mission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
+
+      // On n'a pas de statut 'erreur' dans le CHECK — on utilise 'abandonnee'
+      // et on logge le message d'erreur pour traçabilité
+      db.prepare(`
+        UPDATE missions SET statut = 'abandonnee', completed_at = datetime('now') WHERE id = ?
+      `).run(mission_id);
+
+      if (mission?.agent_id) {
+        db.prepare(`
+          UPDATE agents SET statut = 'libre', mission_id = NULL, pid = NULL WHERE id = ?
+        `).run(mission.agent_id);
+
+        const updatedAgent = db.prepare('SELECT * FROM agents WHERE id = ?').get(mission.agent_id);
+        events.agentStatus(updatedAgent);
+      }
+
+      const updatedMission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
+      events.missionUpdate(updatedMission);
+
+      logMessage(mission_id, mission?.agent_id, 'systeme', `❌ Erreur agent : ${error}`, 'erreur');
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('❌ Hook agent-error handler error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /hooks/worktree-created
+ * L'agent informe le serveur du chemin du worktree créé
+ */
+router.post('/worktree-created', (req, res) => {
+  const { mission_id, worktree_path } = req.body;
+
+  try {
+    if (mission_id && worktree_path) {
+      db.prepare('UPDATE missions SET worktree_path = ? WHERE id = ?').run(worktree_path, mission_id);
+      const updatedMission = db.prepare('SELECT * FROM missions WHERE id = ?').get(mission_id);
+      events.missionUpdate(updatedMission);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('❌ Hook worktree-created error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

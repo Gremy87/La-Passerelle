@@ -7,10 +7,7 @@
         <!-- Logo + titre -->
         <router-link to="/" class="flex items-center gap-2 text-space-text hover:text-space-blue transition-colors">
           <span class="text-space-blue font-mono font-bold text-lg">⚡</span>
-          <div class="flex flex-col leading-tight">
-            <span class="font-mono font-bold tracking-wider text-sm">CENTRE DE COMMANDEMENT</span>
-            <span class="font-mono text-xs text-space-muted tracking-widest">La Passerelle</span>
-          </div>
+          <span class="font-mono font-bold tracking-wider text-sm">CENTRE DE COMMANDEMENT</span>
         </router-link>
 
         <!-- Indicateurs globaux -->

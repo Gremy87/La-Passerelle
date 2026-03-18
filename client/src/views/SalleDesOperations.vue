@@ -9,7 +9,7 @@
       <div class="px-4 py-2.5 border-b border-space-border flex items-center justify-between flex-shrink-0">
         <div class="flex items-center gap-2">
           <span class="text-space-blue">💬</span>
-          <span class="text-sm font-mono font-semibold text-space-text tracking-wide">CENTRE DE COMMANDEMENT</span>
+          <span class="text-sm font-mono font-semibold text-space-text tracking-wide">LA PASSERELLE</span>
         </div>
         <div class="flex items-center gap-3 text-xs font-mono text-space-muted">
           <span v-if="store.connected" class="flex items-center gap-1">

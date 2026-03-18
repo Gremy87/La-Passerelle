@@ -1,0 +1,125 @@
+/* ── Tailwind CSS ── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Variables globales — Thème dark space ── */
+:root {
+  --bg:       #0a0e1a;
+  --panel:    #111827;
+  --card:     #1a2235;
+  --border:   #1e293b;
+  --blue:     #3b82f6;
+  --cyan:     #22d3ee;
+  --success:  #10b981;
+  --warning:  #f59e0b;
+  --danger:   #ef4444;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+}
+
+/* ── Base ── */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  height: 100%;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* ── Scrollbar custom ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--panel);
+}
+::-webkit-scrollbar-thumb {
+  background: #2d3f5a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--blue);
+}
+
+/* ── Utilitaires custom ── */
+@layer components {
+  /* Carte de base */
+  .card {
+    @apply bg-space-card border border-space-border rounded-lg p-4;
+  }
+
+  /* Badge statut */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono font-medium;
+  }
+
+  .badge-hangar      { @apply badge bg-space-muted/20 text-space-muted; }
+  .badge-en_cours    { @apply badge bg-space-blue/20 text-space-blue; }
+  .badge-intervention { @apply badge bg-space-danger/20 text-space-danger; }
+  .badge-terminee    { @apply badge bg-space-success/20 text-space-success; }
+  .badge-abandonnee  { @apply badge bg-space-dim/20 text-space-dim; }
+  .badge-refinement  { @apply badge bg-space-warning/20 text-space-warning; }
+
+  /* Bouton principal */
+  .btn-primary {
+    @apply px-4 py-2 bg-space-blue hover:bg-blue-500 text-white rounded-md font-medium text-sm transition-colors;
+  }
+
+  /* Bouton secondaire */
+  .btn-secondary {
+    @apply px-4 py-2 bg-space-card hover:bg-space-border text-space-text rounded-md font-medium text-sm transition-colors border border-space-border;
+  }
+
+  /* Bouton danger */
+  .btn-danger {
+    @apply px-4 py-2 bg-space-danger/20 hover:bg-space-danger/30 text-space-danger rounded-md font-medium text-sm transition-colors border border-space-danger/30;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-3 py-2 bg-space-bg border border-space-border rounded-md text-space-text placeholder-space-muted focus:outline-none focus:border-space-blue text-sm font-mono;
+  }
+
+  /* Textarea */
+  .textarea {
+    @apply input resize-y min-h-[80px];
+  }
+
+  /* Point de statut animé */
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+  .status-dot.libre         { @apply bg-space-muted; }
+  .status-dot.en_mission    { @apply bg-space-blue animate-pulse; }
+  .status-dot.intervention  { @apply bg-space-danger animate-ping-slow; }
+  .status-dot.hors_ligne    { @apply bg-space-dim; }
+
+  /* Barre de progression "bouclier de vaisseau" */
+  .shield-bar {
+    @apply h-1.5 rounded-full bg-space-border overflow-hidden;
+  }
+  .shield-bar-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-space-blue to-space-cyan transition-all duration-500;
+  }
+
+  /* Log terminal */
+  .log-line {
+    @apply flex gap-2 text-xs font-mono py-0.5;
+  }
+  .log-line-tool     { @apply text-space-cyan; }
+  .log-line-info     { @apply text-space-muted; }
+  .log-line-erreur   { @apply text-space-danger; }
+  .log-line-amiral   { @apply text-space-warning; }
+  .log-line-agent    { @apply text-space-text; }
+}

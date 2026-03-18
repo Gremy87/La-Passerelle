@@ -76,6 +76,7 @@
             :key="m.id"
             :mission="m"
             mode="en_cours"
+            @select="handleSelect"
           />
           <div v-if="missionEnCours.length === 0" class="text-center text-space-dim text-xs font-mono py-3">
             Aucune mission active
@@ -100,6 +101,7 @@
             :mission="m"
             mode="stanby"
             @launch="handleLaunch"
+            @select="handleSelect"
           />
           <div v-if="missionStandBy.length === 0" class="text-center text-space-dim text-xs font-mono py-3">
             Hangar vide
@@ -134,6 +136,7 @@
             :key="m.id"
             :mission="m"
             mode="intervention"
+            @select="handleSelect"
           />
           <div v-if="missionIntervention.length === 0" class="text-center text-space-dim text-xs font-mono py-3">
             Tout roule ✓
@@ -155,6 +158,12 @@
 
     </div>
   </div>
+
+  <!-- Panel latéral mission -->
+  <MissionPanel
+    :mission="selectedMission"
+    @close="selectedMission = null"
+  />
 </template>
 
 <script setup>
@@ -163,12 +172,18 @@ import { usePasserelleStore } from '../stores/passerelle'
 import { useChatStore } from '../stores/chat'
 import ChatWindow from '../components/ChatWindow.vue'
 import MissionCard from '../components/MissionCard.vue'
+import MissionPanel from '../components/MissionPanel.vue'
 
 const store = usePasserelleStore()
 const chatStore = useChatStore()
 
 const inputText = ref('')
 const textarea = ref(null)
+const selectedMission = ref(null)
+
+function handleSelect(mission) {
+  selectedMission.value = mission
+}
 
 // Sections du panneau de supervision
 const missionEnCours     = computed(() => store.missionsByStatut.en_cours)

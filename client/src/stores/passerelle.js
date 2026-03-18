@@ -23,6 +23,10 @@ export const usePasserelleStore = defineStore('passerelle', () => {
   const connected = ref(false) // statut WebSocket
   const ws        = ref(null)
 
+  // ─── Logs temps réel par mission ──────────────────────────────────────────
+  // { [missionId]: [ { type, data, timestamp } ] }
+  const logsMap = ref({})
+
   // ─── Getters ──────────────────────────────────────────────────────────────
 
   const missionsByStatut = computed(() => ({
@@ -45,6 +49,24 @@ export const usePasserelleStore = defineStore('passerelle', () => {
   const hangarEnAttente = computed(() =>
     hangar.value.filter(h => h.statut === 'en_attente')
   )
+
+  /**
+   * Retourne les logs d'une mission donnée (réactif)
+   */
+  function missionLogs(missionId) {
+    return logsMap.value[missionId] || []
+  }
+
+  function addMissionLog(missionId, entry) {
+    if (!logsMap.value[missionId]) {
+      logsMap.value[missionId] = []
+    }
+    logsMap.value[missionId].push(entry)
+    // Garder max 500 entrées par mission
+    if (logsMap.value[missionId].length > 500) {
+      logsMap.value[missionId].splice(0, 100)
+    }
+  }
 
   // ─── Actions Missions ─────────────────────────────────────────────────────
 
@@ -236,7 +258,10 @@ export const usePasserelleStore = defineStore('passerelle', () => {
       }
 
       case 'agent:log': {
-        // Les logs sont gérés dans la vue détail mission (via event bus ou emit)
+        // Stocker dans logsMap ET diffuser via event custom pour rétrocompat
+        if (data && data.mission_id) {
+          addMissionLog(data.mission_id, { ...data, timestamp: Date.now() })
+        }
         window.dispatchEvent(new CustomEvent('passerelle:log', { detail: data }))
         break
       }
@@ -270,9 +295,11 @@ export const usePasserelleStore = defineStore('passerelle', () => {
 
   return {
     // État
-    missions, agents, hangar, loading, connected,
+    missions, agents, hangar, loading, connected, logsMap,
     // Getters
     missionsByStatut, agentsActifs, interventionsCount, hangarEnAttente,
+    // Logs
+    missionLogs, addMissionLog,
     // Actions missions
     fetchMissions, getMission, createMission, updateMission, deleteMission, sendMessage, lancerMission,
     // Actions agents
